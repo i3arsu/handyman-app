@@ -13,7 +13,12 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Reliant Home uses your location to show nearby jobs on the map.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Reliant Home uses your location to show nearby jobs and provide navigation to job sites."
+      },
+      "bundleIdentifier": "com.anonymous.handymanapp"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,10 +26,30 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "${EXPO_PUBLIC_GOOGLE_MAPS_API_KEY}"
+        }
+      },
+      "package": "com.anonymous.handymanapp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Reliant Home uses your location to show nearby jobs on the map."
+        }
+      ]
+    ]
   }
 }
