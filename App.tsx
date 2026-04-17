@@ -1,20 +1,46 @@
+import React from 'react';
+import { View, ActivityIndicator } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { NavigationContainer } from '@react-navigation/native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
 
-export default function App() {
+import { AuthProvider, useAuth } from '@/store/AuthContext';
+import RootNavigator from '@/navigation/RootNavigator';
+
+// ─── Inner shell ──────────────────────────────────────────────────────────────
+// Separated so it can safely call useAuth() inside the AuthProvider tree.
+const AppShell = () => {
+  const { session, role, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#faf9fd' }}>
+        <ActivityIndicator size="large" color="#371800" />
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <RootNavigator
+      isAuthenticated={session !== null}
+      userRole={role}
+    />
   );
-}
+};
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+// ─── Root ─────────────────────────────────────────────────────────────────────
+const App = () => (
+  <GestureHandlerRootView style={{ flex: 1 }}>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <NavigationContainer>
+          <StatusBar style="dark" />
+          <AppShell />
+        </NavigationContainer>
+      </AuthProvider>
+    </SafeAreaProvider>
+  </GestureHandlerRootView>
+);
+
+export default App;
