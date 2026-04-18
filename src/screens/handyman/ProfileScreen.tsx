@@ -2,16 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-
 import { supabase } from '@/services/supabase';
 import { useAuth } from '@/store/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { useSearchRadius, RADIUS_OPTIONS, RadiusOption } from '@/hooks/useSearchRadius';
-import { HandymanTabParamList } from '@/types/navigation';
 
-type ProfileScreenNavigationProp = BottomTabNavigationProp<HandymanTabParamList, 'Profile'>;
-interface ProfileScreenProps { navigation: ProfileScreenNavigationProp; }
+const getInitials = (name: string): string =>
+  name.split(' ').map(n => n[0] ?? '').join('').toUpperCase().slice(0, 2) || '?';
 
 // ─── Skill pill ───────────────────────────────────────────────────────────────
 interface SkillPillProps {
@@ -78,7 +75,7 @@ const ReviewCard = ({ author, initials, avatarColor, text, timeAgo, align }: Rev
 );
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
-const HandymanProfileScreen = ({ navigation: _navigation }: ProfileScreenProps) => {
+const HandymanProfileScreen = () => {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { radiusKm, setRadiusKm } = useSearchRadius();
@@ -87,7 +84,7 @@ const HandymanProfileScreen = ({ navigation: _navigation }: ProfileScreenProps) 
 
   const email = profile?.email ?? user?.email ?? '';
   const displayName = profile?.full_name ?? email.split('@')[0] ?? 'Pro';
-  const initials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+  const initials = getInitials(displayName);
 
   const handleSignOut = async () => {
     setIsSigningOut(true);

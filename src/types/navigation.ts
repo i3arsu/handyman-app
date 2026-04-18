@@ -19,7 +19,7 @@ export type AuthStackParamList = {
 export type ClientStackParamList = {
   Tabs: undefined;
   JobProgress: { jobId: string };
-  Chat: { jobId: string; handymanName: string; handymanInitials: string };
+  Chat: { jobId: string; counterpartyName: string; counterpartyInitials: string };
   Notifications: undefined;
 };
 
@@ -48,6 +48,7 @@ export type PostJobStackParamList = {
 // ─── Handyman Stack (wraps tabs + detail screens) ────────────────────────────
 export type HandymanStackParamList = {
   Tabs: undefined;
+  ListView: undefined;
   JobInformation: {
     jobId: string;
     jobTitle: string;
@@ -69,11 +70,12 @@ export type HandymanStackParamList = {
     jobAddress: string | null;
     category: string | null;
   };
+  Chat: { jobId: string; counterpartyName: string; counterpartyInitials: string };
 };
 
 // ─── Handyman Tab Navigator ──────────────────────────────────────────────────
 export type HandymanTabParamList = {
   MapView: undefined;
-  ListView: undefined;
+  MyJobs: undefined;
   Profile: undefined;
 };

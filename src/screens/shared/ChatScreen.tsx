@@ -11,21 +11,30 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 
 import { useJobMessages } from '@/hooks/useJobMessages';
+import { useJob } from '@/hooks/useJob';
 import { useAuth } from '@/store/AuthContext';
-import { ClientStackParamList } from '@/types/navigation';
-import { Message } from '@/types/database';
+import { ClientStackParamList, HandymanStackParamList } from '@/types/navigation';
+import { Message, JobStatus } from '@/types/database';
 
-type ChatNavigationProp = NativeStackNavigationProp<ClientStackParamList, 'Chat'>;
-type ChatRouteProp = RouteProp<ClientStackParamList, 'Chat'>;
+// Works under either stack — both have a "Chat" route with identical params.
+type ChatRouteParams =
+  | RouteProp<ClientStackParamList, 'Chat'>
+  | RouteProp<HandymanStackParamList, 'Chat'>;
 
-interface ChatScreenProps {
-  navigation: ChatNavigationProp;
-  route: ChatRouteProp;
-}
+// ─── Category → icon ──────────────────────────────────────────────────────────
+const CATEGORY_ICONS: Record<string, { icon: keyof typeof Ionicons.glyphMap; tint: string }> = {
+  Plumbing:   { icon: 'water-outline',      tint: '#3f5882' },
+  Electrical: { icon: 'flash-outline',       tint: '#005231' },
+  HVAC:       { icon: 'thermometer-outline', tint: '#005231' },
+  Painting:   { icon: 'brush-outline',       tint: '#43474e' },
+  Locksmith:  { icon: 'key-outline',         tint: '#3f5882' },
+  Tiling:     { icon: 'grid-outline',        tint: '#703700' },
+  Carpentry:  { icon: 'hammer-outline',      tint: '#43474e' },
+  General:    { icon: 'construct-outline',   tint: '#43474e' },
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const formatTime = (iso: string): string =>
@@ -42,6 +51,14 @@ const formatDateLabel = (iso: string): string => {
   if (d.toDateString() === today.toDateString()) return 'Today';
   if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+const STATUS_COPY: Record<JobStatus, { label: string; color: string }> = {
+  open:        { label: 'Awaiting acceptance', color: '#e98633' },
+  accepted:    { label: 'Job accepted',        color: '#005231' },
+  in_progress: { label: 'Work in progress',    color: '#005231' },
+  completed:   { label: 'Completed',           color: '#43474e' },
+  cancelled:   { label: 'Cancelled',           color: '#ba1a1a' },
 };
 
 // ─── Bubble ───────────────────────────────────────────────────────────────────
@@ -109,41 +126,59 @@ const DateDivider = ({ label }: { label: string }) => (
 // ─── Context card ─────────────────────────────────────────────────────────────
 interface ContextCardProps {
   jobId: string;
+  jobTitle: string | null;
+  category: string | null;
+  status: JobStatus | null;
 }
 
-const ContextCard = ({ jobId }: ContextCardProps) => (
-  <View className="bg-surface-container-low p-5 rounded-xl my-6">
-    <View className="flex-row items-center gap-x-3 mb-4">
-      <View className="w-12 h-12 bg-secondary-container rounded-xl items-center justify-center" style={{ opacity: 0.7 }}>
-        <Ionicons name="construct-outline" size={22} color="#3f5882" />
+const ContextCard = ({ jobId, jobTitle, category, status }: ContextCardProps) => {
+  const cat = CATEGORY_ICONS[category ?? 'General'] ?? CATEGORY_ICONS.General;
+  const statusInfo = status ? STATUS_COPY[status] : null;
+
+  return (
+    <View className="bg-surface-container-low p-5 rounded-xl my-6">
+      <View className="flex-row items-center gap-x-3 mb-4">
+        <View className="w-12 h-12 bg-secondary-container rounded-xl items-center justify-center" style={{ opacity: 0.7 }}>
+          <Ionicons name={cat.icon} size={22} color={cat.tint} />
+        </View>
+        <View className="flex-1">
+          <Text className="font-extrabold text-on-surface" numberOfLines={1}>
+            {jobTitle ?? 'Active Job'}
+          </Text>
+          <Text className="text-sm text-on-surface-variant">ID: #{jobId.slice(0, 8).toUpperCase()}</Text>
+        </View>
       </View>
-      <View>
-        <Text className="font-extrabold text-on-surface">Active Job</Text>
-        <Text className="text-sm text-on-surface-variant">ID: #{jobId.slice(0, 8).toUpperCase()}</Text>
+      <View className="flex-row gap-x-3">
+        <View className="flex-1 bg-surface-container-lowest p-3 rounded-lg">
+          <Text className="text-xs font-extrabold text-on-surface-variant uppercase tracking-wider mb-1">Category</Text>
+          <Text className="text-sm font-extrabold text-on-surface">{category ?? '—'}</Text>
+        </View>
+        <View className="flex-1 bg-surface-container-lowest p-3 rounded-lg">
+          <Text className="text-xs font-extrabold text-on-surface-variant uppercase tracking-wider mb-1">Status</Text>
+          <Text
+            className="text-sm font-extrabold"
+            style={{ color: statusInfo?.color ?? '#43474e' }}
+          >
+            {statusInfo?.label ?? '—'}
+          </Text>
+        </View>
       </View>
     </View>
-    <View className="flex-row gap-x-3">
-      <View className="flex-1 bg-surface-container-lowest p-3 rounded-lg">
-        <Text className="text-xs font-extrabold text-on-surface-variant uppercase tracking-wider mb-1">Status</Text>
-        <Text className="text-sm font-extrabold text-on-tertiary-fixed-variant">Pro en route</Text>
-      </View>
-      <View className="flex-1 bg-surface-container-lowest p-3 rounded-lg">
-        <Text className="text-xs font-extrabold text-on-surface-variant uppercase tracking-wider mb-1">Est. Arrival</Text>
-        <Text className="text-sm font-extrabold text-primary">~10 mins</Text>
-      </View>
-    </View>
-  </View>
-);
+  );
+};
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
-const ChatScreen = ({ navigation, route }: ChatScreenProps) => {
-  const { jobId, handymanName, handymanInitials } = route.params;
+const ChatScreen = () => {
+  const navigation = useNavigation();
+  const route = useRoute<ChatRouteParams>();
+  const { jobId, counterpartyName, counterpartyInitials } = route.params;
+
   const { user } = useAuth();
+  const { job } = useJob(jobId);
   const { messages, isLoading, sendMessage } = useJobMessages(jobId);
   const [draft, setDraft] = useState('');
   const scrollRef = useRef<ScrollView>(null);
 
-  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (messages.length > 0) {
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
@@ -157,10 +192,10 @@ const ChatScreen = ({ navigation, route }: ChatScreenProps) => {
     await sendMessage(content, user.id);
   };
 
-  // Build message list with date dividers inserted between day boundaries
+  const firstName = counterpartyName.split(' ')[0];
+
   const renderMessages = () => {
     const elements: React.ReactNode[] = [];
-
     messages.forEach((msg, idx) => {
       const prevMsg = messages[idx - 1];
       if (!prevMsg || !isSameDay(prevMsg.created_at, msg.created_at)) {
@@ -170,7 +205,6 @@ const ChatScreen = ({ navigation, route }: ChatScreenProps) => {
         <Bubble key={msg.id} message={msg} isMine={msg.sender_id === user?.id} />,
       );
     });
-
     return elements;
   };
 
@@ -191,12 +225,12 @@ const ChatScreen = ({ navigation, route }: ChatScreenProps) => {
           </Pressable>
           <View className="relative">
             <View className="w-12 h-12 rounded-full bg-secondary items-center justify-center" style={{ borderWidth: 2, borderColor: '#9ff5c1' }}>
-              <Text className="text-white font-extrabold text-sm">{handymanInitials}</Text>
+              <Text className="text-white font-extrabold text-sm">{counterpartyInitials}</Text>
             </View>
             <View className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-tertiary-fixed border-2 border-white" />
           </View>
           <View>
-            <Text className="font-extrabold text-lg text-primary tracking-tight">{handymanName}</Text>
+            <Text className="font-extrabold text-lg text-primary tracking-tight">{counterpartyName}</Text>
             <View className="flex-row items-center gap-x-1.5">
               <View className="w-2 h-2 rounded-full bg-tertiary-fixed-dim" />
               <Text className="text-xs font-semibold text-on-tertiary-container">Online Now</Text>
@@ -224,7 +258,6 @@ const ChatScreen = ({ navigation, route }: ChatScreenProps) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={0}
       >
-        {/* Message list */}
         {isLoading ? (
           <View className="flex-1 items-center justify-center">
             <ActivityIndicator size="large" color="#371800" />
@@ -237,8 +270,12 @@ const ChatScreen = ({ navigation, route }: ChatScreenProps) => {
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            {/* Context card always shown at top */}
-            <ContextCard jobId={jobId} />
+            <ContextCard
+              jobId={jobId}
+              jobTitle={job?.title ?? null}
+              category={job?.category ?? null}
+              status={job?.status ?? null}
+            />
 
             {messages.length === 0 ? (
               <View className="items-center py-12">
@@ -247,7 +284,7 @@ const ChatScreen = ({ navigation, route }: ChatScreenProps) => {
                 </View>
                 <Text className="font-extrabold text-on-surface text-center">No messages yet</Text>
                 <Text className="text-on-surface-variant text-sm text-center mt-1">
-                  Send a message to {handymanName.split(' ')[0]}
+                  Send a message to {firstName}
                 </Text>
               </View>
             ) : (
@@ -270,7 +307,7 @@ const ChatScreen = ({ navigation, route }: ChatScreenProps) => {
 
           <View className="flex-1 bg-surface-container-highest rounded-full px-5 justify-center" style={{ height: 48 }}>
             <TextInput
-              placeholder={`Message ${handymanName.split(' ')[0]}…`}
+              placeholder={`Message ${firstName}…`}
               placeholderTextColor="#74777f"
               className="text-sm text-on-surface"
               value={draft}

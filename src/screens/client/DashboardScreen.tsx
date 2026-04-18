@@ -75,15 +75,18 @@ const JobCard = ({ job, onPress }: JobCardProps) => {
   const isOpen = job.status === 'open';
 
   return (
-    <View
+    <Pressable
+      onPress={onPress}
       className="bg-surface-container-lowest rounded-xl p-6 mb-5"
-      style={{
+      style={({ pressed }) => ({
+        opacity: pressed ? 0.95 : 1,
+        transform: [{ scale: pressed ? 0.99 : 1 }],
         shadowColor: '#1a1c1e',
         shadowOpacity: 0.04,
         shadowRadius: 8,
         shadowOffset: { width: 0, height: 2 },
         elevation: 2,
-      }}
+      })}
     >
       {/* Top row */}
       <View className="flex-row justify-between items-start mb-4">
@@ -166,7 +169,7 @@ const JobCard = ({ job, onPress }: JobCardProps) => {
           </Text>
         </Pressable>
       </View>
-    </View>
+    </Pressable>
   );
 };
 

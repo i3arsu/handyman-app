@@ -16,7 +16,8 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Reliant Home uses your location to show nearby jobs on the map.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "Reliant Home uses your location to show nearby jobs and provide navigation to job sites."
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Reliant Home uses your location to show nearby jobs and provide navigation to job sites.",
+        "ITSAppUsesNonExemptEncryption": false
       },
       "bundleIdentifier": "com.anonymous.handymanapp"
     },
@@ -50,6 +51,11 @@
           "locationWhenInUsePermission": "Reliant Home uses your location to show nearby jobs on the map."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "7a7bda85-9ed7-4e3d-8ec8-5dc8da6aae98"
+      }
+    }
   }
 }

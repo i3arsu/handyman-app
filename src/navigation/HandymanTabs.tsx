@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
 import MapViewScreen from '@/screens/handyman/MapViewScreen';
-import ListViewScreen from '@/screens/handyman/ListViewScreen';
+import MyJobsScreen from '@/screens/handyman/MyJobsScreen';
 import HandymanProfileScreen from '@/screens/handyman/ProfileScreen';
 import { HandymanTabParamList } from '@/types/navigation';
 
@@ -63,12 +63,12 @@ const HandymanTabs = () => {
         }}
       />
       <Tab.Screen
-        name="ListView"
-        component={ListViewScreen}
+        name="MyJobs"
+        component={MyJobsScreen}
         options={{
           tabBarLabel: 'My Jobs',
           tabBarIcon: ({ focused, color }) => (
-            <TabIcon name="construct-outline" focusedName="construct" focused={focused} color={color} />
+            <TabIcon name="briefcase-outline" focusedName="briefcase" focused={focused} color={color} />
           ),
         }}
       />

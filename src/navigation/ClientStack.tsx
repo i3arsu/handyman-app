@@ -3,7 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import ClientTabs from '@/navigation/ClientTabs';
 import JobProgressScreen from '@/screens/client/JobProgressScreen';
-import ChatScreen from '@/screens/client/ChatScreen';
+import ChatScreen from '@/screens/shared/ChatScreen';
 import NotificationsScreen from '@/screens/client/NotificationsScreen';
 import { ClientStackParamList } from '@/types/navigation';
 

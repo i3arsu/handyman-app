@@ -431,8 +431,8 @@ const JobProgressScreen = ({ navigation, route }: JobProgressScreenProps) => {
               onChat={() =>
                 navigation.navigate('Chat', {
                   jobId,
-                  handymanName: handyman.name,
-                  handymanInitials: handyman.initials,
+                  counterpartyName: handyman.name,
+                  counterpartyInitials: handyman.initials,
                 })
               }
             />

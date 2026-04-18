@@ -8,21 +8,17 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { CompositeNavigationProp, useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { useOpenJobs } from '@/hooks/useOpenJobs';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { useSearchRadius } from '@/hooks/useSearchRadius';
 import { getDistanceKm } from '@/utils/geo';
-import { HandymanTabParamList, HandymanStackParamList } from '@/types/navigation';
+import { HandymanStackParamList } from '@/types/navigation';
 import { Job } from '@/types/database';
 
-type ListViewScreenNavigationProp = CompositeNavigationProp<
-  BottomTabNavigationProp<HandymanTabParamList, 'ListView'>,
-  NativeStackNavigationProp<HandymanStackParamList>
->;
+type ListViewScreenNavigationProp = NativeStackNavigationProp<HandymanStackParamList, 'ListView'>;
 
 interface ListViewScreenProps {
   navigation: ListViewScreenNavigationProp;
@@ -238,7 +234,7 @@ const ListViewScreen = ({ navigation }: ListViewScreenProps) => {
           <Pressable
             className="flex-row items-center gap-x-2 px-6 py-2 rounded-full"
             style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-            onPress={() => navigation.navigate('MapView')}
+            onPress={() => navigation.goBack()}
           >
             <Ionicons name="map-outline" size={16} color="#43474e" />
             <Text className="text-on-surface-variant text-sm font-semibold">Map View</Text>
