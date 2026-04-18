@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/services/supabase';
 import { useAuth } from '@/store/AuthContext';
 import { Profile } from '@/types/database';
@@ -53,5 +53,7 @@ export const useProfile = (): UseProfileResult => {
     return () => { cancelled = true; };
   }, [user, tick]);
 
-  return { profile, isLoading, error, refetch: () => setTick(t => t + 1) };
+  const refetch = useCallback(() => setTick(t => t + 1), []);
+
+  return { profile, isLoading, error, refetch };
 };
