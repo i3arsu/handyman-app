@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   ScrollView,
   Pressable,
   Platform,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,7 +14,11 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
+import { supabase } from '@/services/supabase';
+import { useAuth } from '@/store/AuthContext';
+import { useJob } from '@/hooks/useJob';
 import { HandymanStackParamList } from '@/types/navigation';
+import { JobStatus } from '@/types/database';
 
 type JobInformationNavigationProp = NativeStackNavigationProp<HandymanStackParamList, 'JobInformation'>;
 type JobInformationRouteProp = RouteProp<HandymanStackParamList, 'JobInformation'>;
@@ -147,9 +153,39 @@ const InfoTile = ({ label, value, icon }: { label: string; value: string; icon: 
   </View>
 );
 
+// ─── Lifecycle CTA config ─────────────────────────────────────────────────────
+interface CtaConfig {
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  nextStatus?: JobStatus;
+  confirmTitle?: string;
+  confirmBody?: string;
+  disabled?: boolean;
+}
+
+const OWNER_CTA: Partial<Record<JobStatus, CtaConfig>> = {
+  accepted: {
+    label: 'Start Job',
+    icon: 'play-circle-outline',
+    nextStatus: 'in_progress',
+    confirmTitle: 'Start this job?',
+    confirmBody: 'Mark the job as in progress. The client will be notified.',
+  },
+  in_progress: {
+    label: 'Mark Complete',
+    icon: 'checkmark-circle-outline',
+    nextStatus: 'completed',
+    confirmTitle: 'Mark job complete?',
+    confirmBody: 'This finalises the job and notifies the client.',
+  },
+  completed: { label: 'Job Completed', icon: 'checkmark-done-outline', disabled: true },
+  cancelled: { label: 'Job Cancelled', icon: 'close-circle-outline',  disabled: true },
+};
+
 // ─── Screen ───────────────────────────────────────────────────────────────────
 const JobInformationScreen = ({ navigation, route }: JobInformationScreenProps) => {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const {
     jobId,
     jobTitle,
@@ -165,16 +201,54 @@ const JobInformationScreen = ({ navigation, route }: JobInformationScreenProps) 
     createdAt,
   } = route.params;
 
+  const { job } = useJob(jobId);
+  const [isUpdating, setIsUpdating] = useState(false);
+
   const catConfig = CATEGORY_ICONS[category] ?? CATEGORY_ICONS.General;
   const shortId = jobId.slice(0, 8).toUpperCase();
 
-  const handleAccept = () => {
+  const isOwner = !!job && !!user && job.handyman_id === user.id;
+  const hasPendingApplication =
+    !!user &&
+    (job?.job_applications ?? []).some(
+      (a) => a.status === 'pending' && a.handyman?.id === user.id,
+    );
+  const ownerCta = job && isOwner ? OWNER_CTA[job.status] : undefined;
+
+  const handleApplyFlow = () => {
     navigation.navigate('PricingRouting', {
       jobId,
       jobTitle,
       jobAddress,
       category,
     });
+  };
+
+  const handleLifecycleTransition = (cfg: CtaConfig) => {
+    if (!cfg.nextStatus) return;
+
+    Alert.alert(cfg.confirmTitle ?? 'Confirm', cfg.confirmBody ?? '', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Confirm',
+        style: 'default',
+        onPress: async () => {
+          setIsUpdating(true);
+          try {
+            const { error: updateError } = await supabase
+              .from('jobs')
+              .update({ status: cfg.nextStatus })
+              .eq('id', jobId);
+
+            if (updateError) {
+              Alert.alert('Error', updateError.message);
+            }
+          } finally {
+            setIsUpdating(false);
+          }
+        },
+      },
+    ]);
   };
 
   return (
@@ -316,34 +390,120 @@ const JobInformationScreen = ({ navigation, route }: JobInformationScreenProps) 
           elevation: 10,
         }}
       >
-        <Pressable onPress={handleAccept}>
-          {({ pressed }) => (
-            <View
-              style={{
-                width: '100%',
-                height: 56,
-                borderRadius: 9999,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 10,
-                backgroundColor: '#371800',
-                opacity: pressed ? 0.85 : 1,
-                transform: [{ scale: pressed ? 0.98 : 1 }],
-                shadowColor: '#371800',
-                shadowOpacity: 0.3,
-                shadowRadius: 16,
-                shadowOffset: { width: 0, height: 6 },
-                elevation: 6,
-              }}
-            >
-              <Text style={{ color: '#ffffff', fontWeight: '800', fontSize: 17 }}>
-                Apply for this Job
-              </Text>
-              <Ionicons name="arrow-forward" size={20} color="#ffffff" />
-            </View>
-          )}
-        </Pressable>
+        {ownerCta ? (
+          <Pressable
+            onPress={() => !ownerCta.disabled && handleLifecycleTransition(ownerCta)}
+            disabled={ownerCta.disabled || isUpdating || !ownerCta.nextStatus}
+          >
+            {({ pressed }) => (
+              <View
+                style={{
+                  width: '100%',
+                  height: 56,
+                  borderRadius: 9999,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 10,
+                  backgroundColor: ownerCta.disabled ? '#e3e2e6' : '#371800',
+                  opacity: pressed && !ownerCta.disabled ? 0.85 : 1,
+                  transform: [{ scale: pressed && !ownerCta.disabled ? 0.98 : 1 }],
+                  shadowColor: '#371800',
+                  shadowOpacity: ownerCta.disabled ? 0 : 0.3,
+                  shadowRadius: 16,
+                  shadowOffset: { width: 0, height: 6 },
+                  elevation: ownerCta.disabled ? 0 : 6,
+                }}
+              >
+                {isUpdating ? (
+                  <ActivityIndicator color="#ffffff" />
+                ) : (
+                  <>
+                    <Ionicons
+                      name={ownerCta.icon}
+                      size={20}
+                      color={ownerCta.disabled ? '#74777f' : '#ffffff'}
+                    />
+                    <Text
+                      style={{
+                        color: ownerCta.disabled ? '#74777f' : '#ffffff',
+                        fontWeight: '800',
+                        fontSize: 17,
+                      }}
+                    >
+                      {ownerCta.label}
+                    </Text>
+                  </>
+                )}
+              </View>
+            )}
+          </Pressable>
+        ) : hasPendingApplication ? (
+          <View
+            style={{
+              width: '100%',
+              height: 56,
+              borderRadius: 9999,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 10,
+              backgroundColor: '#e3e2e6',
+            }}
+          >
+            <Ionicons name="hourglass-outline" size={20} color="#74777f" />
+            <Text style={{ color: '#74777f', fontWeight: '800', fontSize: 17 }}>
+              Application Pending
+            </Text>
+          </View>
+        ) : job && job.status !== 'open' ? (
+          <View
+            style={{
+              width: '100%',
+              height: 56,
+              borderRadius: 9999,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 10,
+              backgroundColor: '#e3e2e6',
+            }}
+          >
+            <Ionicons name="lock-closed-outline" size={20} color="#74777f" />
+            <Text style={{ color: '#74777f', fontWeight: '800', fontSize: 17 }}>
+              Unavailable
+            </Text>
+          </View>
+        ) : (
+          <Pressable onPress={handleApplyFlow}>
+            {({ pressed }) => (
+              <View
+                style={{
+                  width: '100%',
+                  height: 56,
+                  borderRadius: 9999,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 10,
+                  backgroundColor: '#371800',
+                  opacity: pressed ? 0.85 : 1,
+                  transform: [{ scale: pressed ? 0.98 : 1 }],
+                  shadowColor: '#371800',
+                  shadowOpacity: 0.3,
+                  shadowRadius: 16,
+                  shadowOffset: { width: 0, height: 6 },
+                  elevation: 6,
+                }}
+              >
+                <Text style={{ color: '#ffffff', fontWeight: '800', fontSize: 17 }}>
+                  Apply for this Job
+                </Text>
+                <Ionicons name="arrow-forward" size={20} color="#ffffff" />
+              </View>
+            )}
+          </Pressable>
+        )}
       </View>
 
     </View>

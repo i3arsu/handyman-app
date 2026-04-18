@@ -114,6 +114,14 @@ create policy "Clients can update their own jobs"
   to authenticated
   using (auth.uid() = client_id);
 
+-- Lifecycle transitions (accepted -> in_progress -> completed) are driven
+-- by the assigned handyman from JobInformationScreen.
+create policy "Assigned handyman can update job"
+  on public.jobs for update
+  to authenticated
+  using (auth.uid() = handyman_id)
+  with check (auth.uid() = handyman_id);
+
 create policy "Clients can delete their own jobs"
   on public.jobs for delete
   to authenticated
