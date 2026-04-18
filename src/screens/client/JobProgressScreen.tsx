@@ -344,7 +344,7 @@ const getHandyman = (job: Job): { name: string; initials: string } | null => {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 const JobProgressScreen = ({ navigation, route }: JobProgressScreenProps) => {
   const { jobId } = route.params;
-  const { job, isLoading, error } = useJob(jobId);
+  const { job, isLoading, error, refetch } = useJob(jobId);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
 
   const handleAcceptApplicant = async (handymanId: string) => {
@@ -379,7 +379,12 @@ const JobProgressScreen = ({ navigation, route }: JobProgressScreenProps) => {
 
       if (jobError) {
         Alert.alert('Error', jobError.message);
+        return;
       }
+
+      // Don't wait for realtime — refresh locally so the UI flips to the
+      // accepted state (pro card, timeline, hidden applicants) immediately.
+      refetch();
     } finally {
       setAcceptingId(null);
     }

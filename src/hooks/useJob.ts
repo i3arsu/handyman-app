@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 
 import { supabase } from '@/services/supabase';
 import { Job, Profile } from '@/types/database';
@@ -7,6 +7,7 @@ interface UseJobResult {
   job: Job | null;
   isLoading: boolean;
   error: string | null;
+  refetch: () => void;
 }
 
 interface JobApplicationRow {
@@ -25,6 +26,11 @@ export const useJob = (jobId: string): UseJobResult => {
   // on a shared channel name — which triggers "cannot add postgres_changes
   // callbacks after subscribe()".
   const channelIdRef = useRef<string>(Math.random().toString(36).slice(2));
+
+  // Stable fetcher ref so realtime callbacks and the imperative refetch()
+  // don't need to be in the effect deps — which would re-subscribe channels
+  // and throw "cannot add postgres_changes callbacks after subscribe()".
+  const fetchRef = useRef<() => Promise<void>>(async () => {});
 
   useEffect(() => {
     let cancelled = false;
@@ -123,6 +129,7 @@ export const useJob = (jobId: string): UseJobResult => {
       }
     };
 
+    fetchRef.current = fetchJob;
     fetchJob();
 
     const suffix = channelIdRef.current;
@@ -132,7 +139,7 @@ export const useJob = (jobId: string): UseJobResult => {
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'jobs', filter: `id=eq.${jobId}` },
-        () => { fetchJob(); },
+        () => { fetchRef.current(); },
       )
       .subscribe();
 
@@ -141,7 +148,7 @@ export const useJob = (jobId: string): UseJobResult => {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'job_applications', filter: `job_id=eq.${jobId}` },
-        () => { fetchJob(); },
+        () => { fetchRef.current(); },
       )
       .subscribe();
 
@@ -152,5 +159,7 @@ export const useJob = (jobId: string): UseJobResult => {
     };
   }, [jobId]);
 
-  return { job, isLoading, error };
+  const refetch = useCallback(() => { fetchRef.current(); }, []);
+
+  return { job, isLoading, error, refetch };
 };

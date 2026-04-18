@@ -201,7 +201,7 @@ const JobInformationScreen = ({ navigation, route }: JobInformationScreenProps) 
     createdAt,
   } = route.params;
 
-  const { job } = useJob(jobId);
+  const { job, refetch } = useJob(jobId);
   const [isUpdating, setIsUpdating] = useState(false);
 
   const catConfig = CATEGORY_ICONS[category] ?? CATEGORY_ICONS.General;
@@ -242,6 +242,8 @@ const JobInformationScreen = ({ navigation, route }: JobInformationScreenProps) 
 
             if (updateError) {
               Alert.alert('Error', updateError.message);
+            } else {
+              refetch();
             }
           } finally {
             setIsUpdating(false);
