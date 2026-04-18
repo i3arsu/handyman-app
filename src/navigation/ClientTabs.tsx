@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
 import DashboardScreen from '@/screens/client/DashboardScreen';
-import ClientProfileScreen from '@/screens/client/ProfileScreen';
+import SettingsScreen from '@/screens/client/SettingsScreen';
 import PostJobStack from '@/navigation/PostJobStack';
 import { ClientTabParamList } from '@/types/navigation';
 
@@ -86,13 +86,13 @@ const ClientTabs = () => (
 
     <Tab.Screen
       name="Settings"
-      component={ClientProfileScreen}
+      component={SettingsScreen}
       options={{
         tabBarLabel: 'Settings',
         tabBarIcon: ({ focused, color }) => (
           <TabIcon
-            name="person-outline"
-            focusedName="person"
+            name="settings-outline"
+            focusedName="settings"
             focused={focused}
             color={color}
           />
