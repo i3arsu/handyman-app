@@ -14,6 +14,7 @@ create table if not exists public.profiles (
   id                     uuid primary key references auth.users(id) on delete cascade,
   email                  text not null,
   full_name              text,
+  phone                  text,
   avatar_url             text,
   role                   text not null check (role in ('client', 'handyman')),
   notif_push             boolean not null default true,

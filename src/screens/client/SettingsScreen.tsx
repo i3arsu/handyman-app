@@ -1,16 +1,21 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { CompositeNavigationProp, useFocusEffect } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { supabase } from '@/services/supabase';
 import { useAuth } from '@/store/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
-import { ClientTabParamList } from '@/types/navigation';
+import { ClientTabParamList, ClientStackParamList } from '@/types/navigation';
 
-type SettingsScreenNavigationProp = BottomTabNavigationProp<ClientTabParamList, 'Settings'>;
+type SettingsScreenNavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<ClientTabParamList, 'Settings'>,
+  NativeStackNavigationProp<ClientStackParamList>
+>;
 interface SettingsScreenProps { navigation: SettingsScreenNavigationProp; }
 
 // ─── Section header ───────────────────────────────────────────────────────────
@@ -153,16 +158,20 @@ const PaymentCard = ({ cardHolder }: PaymentCardProps) => (
 );
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
-const SettingsScreen = (_props: SettingsScreenProps) => {
+const SettingsScreen = ({ navigation }: SettingsScreenProps) => {
   const { user } = useAuth();
-  const { profile } = useProfile();
+  const { profile, refetch } = useProfile();
   const { preferences, setPreference } = useNotificationPreferences();
 
   const [isSigningOut, setIsSigningOut] = useState(false);
 
+  useFocusEffect(useCallback(() => { refetch(); }, [refetch]));
+
   const email = profile?.email ?? user?.email ?? '—';
   const displayName = profile?.full_name ?? email.split('@')[0] ?? 'User';
-  const phone = '+1 (555) 234-5678';
+  const phone = profile?.phone ?? 'Not set';
+
+  const goToEditProfile = () => navigation.navigate('EditProfile');
 
   const handleSignOut = async () => {
     try {
@@ -191,8 +200,9 @@ const SettingsScreen = (_props: SettingsScreenProps) => {
         {/* Account */}
         <SectionHeader icon="person-outline" title="Account" />
         <View className="bg-surface-container-low rounded-xl overflow-hidden">
-          <AccountRow label="Email Address" value={email} isFirst />
-          <AccountRow label="Phone Number" value={phone} />
+          <AccountRow label="Full Name" value={displayName} onPress={goToEditProfile} isFirst />
+          <AccountRow label="Email Address" value={email} />
+          <AccountRow label="Phone Number" value={phone} onPress={goToEditProfile} />
           <AccountRow label="Password" value="••••••••••••" />
         </View>
 

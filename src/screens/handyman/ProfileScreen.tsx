@@ -1,11 +1,22 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { CompositeNavigationProp, useFocusEffect } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
 import { supabase } from '@/services/supabase';
 import { useAuth } from '@/store/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { useSearchRadius, RADIUS_OPTIONS, RadiusOption } from '@/hooks/useSearchRadius';
+import { HandymanStackParamList, HandymanTabParamList } from '@/types/navigation';
+
+type HandymanProfileNavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<HandymanTabParamList, 'Profile'>,
+  NativeStackNavigationProp<HandymanStackParamList>
+>;
+interface HandymanProfileScreenProps { navigation: HandymanProfileNavigationProp; }
 
 const getInitials = (name: string): string =>
   name.split(' ').map(n => n[0] ?? '').join('').toUpperCase().slice(0, 2) || '?';
@@ -75,12 +86,14 @@ const ReviewCard = ({ author, initials, avatarColor, text, timeAgo, align }: Rev
 );
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
-const HandymanProfileScreen = () => {
+const HandymanProfileScreen = ({ navigation }: HandymanProfileScreenProps) => {
   const { user } = useAuth();
-  const { profile } = useProfile();
+  const { profile, refetch } = useProfile();
   const { radiusKm, setRadiusKm } = useSearchRadius();
   const [isAvailable, setIsAvailable] = useState(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
+
+  useFocusEffect(useCallback(() => { refetch(); }, [refetch]));
 
   const email = profile?.email ?? user?.email ?? '';
   const displayName = profile?.full_name ?? email.split('@')[0] ?? 'Pro';
@@ -95,17 +108,14 @@ const HandymanProfileScreen = () => {
     <SafeAreaView className="flex-1 bg-surface">
       {/* Header */}
       <View className="flex-row items-center justify-between px-6 py-4">
-        <View className="flex-row items-center gap-x-4">
-          <Pressable
-            className="p-2 rounded-full"
-            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, backgroundColor: pressed ? '#efedf1' : 'transparent' })}
-          >
-            <Ionicons name="arrow-back" size={22} color="#371800" />
-          </Pressable>
-          <Text className="text-lg font-extrabold text-primary tracking-tight">Profile</Text>
-        </View>
-        <Pressable className="p-2 rounded-full" style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
-          <Ionicons name="settings-outline" size={22} color="#371800" />
+        <Text className="text-lg font-extrabold text-primary tracking-tight">Profile</Text>
+        <Pressable
+          className="p-2 rounded-full"
+          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, backgroundColor: pressed ? '#efedf1' : 'transparent' })}
+          onPress={() => navigation.navigate('EditProfile')}
+          accessibilityLabel="Edit profile"
+        >
+          <Ionicons name="create-outline" size={22} color="#371800" />
         </Pressable>
       </View>
 

@@ -7,6 +7,7 @@ import ListViewScreen from '@/screens/handyman/ListViewScreen';
 import PricingRoutingScreen from '@/screens/handyman/PricingRoutingScreen';
 import NotificationsScreen from '@/screens/client/NotificationsScreen';
 import ChatScreen from '@/screens/shared/ChatScreen';
+import EditProfileScreen from '@/screens/shared/EditProfileScreen';
 import { SearchRadiusProvider } from '@/hooks/useSearchRadius';
 import { HandymanStackParamList } from '@/types/navigation';
 
@@ -39,6 +40,11 @@ const HandymanStack = () => (
       <Stack.Screen
         name="Chat"
         component={ChatScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="EditProfile"
+        component={EditProfileScreen}
         options={{ animation: 'slide_from_right' }}
       />
     </Stack.Navigator>

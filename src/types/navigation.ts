@@ -21,6 +21,7 @@ export type ClientStackParamList = {
   JobProgress: { jobId: string };
   Chat: { jobId: string; counterpartyName: string; counterpartyInitials: string };
   Notifications: undefined;
+  EditProfile: undefined;
 };
 
 // ─── Client Tab Navigator ────────────────────────────────────────────────────
@@ -71,6 +72,7 @@ export type HandymanStackParamList = {
     category: string | null;
   };
   Chat: { jobId: string; counterpartyName: string; counterpartyInitials: string };
+  EditProfile: undefined;
 };
 
 // ─── Handyman Tab Navigator ──────────────────────────────────────────────────

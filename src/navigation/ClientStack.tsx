@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import ClientTabs from '@/navigation/ClientTabs';
 import JobProgressScreen from '@/screens/client/JobProgressScreen';
 import ChatScreen from '@/screens/shared/ChatScreen';
+import EditProfileScreen from '@/screens/shared/EditProfileScreen';
 import NotificationsScreen from '@/screens/client/NotificationsScreen';
 import { ClientStackParamList } from '@/types/navigation';
 
@@ -25,6 +26,11 @@ const ClientStack = () => (
     <Stack.Screen
       name="Notifications"
       component={NotificationsScreen}
+      options={{ animation: 'slide_from_right' }}
+    />
+    <Stack.Screen
+      name="EditProfile"
+      component={EditProfileScreen}
       options={{ animation: 'slide_from_right' }}
     />
   </Stack.Navigator>
