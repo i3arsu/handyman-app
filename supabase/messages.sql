@@ -28,7 +28,7 @@ create policy "Clients read their job messages"
     )
   );
 
--- Handymen can read messages on jobs they have an accepted application for
+-- Handymen can read messages on jobs they have a pending or accepted application for
 create policy "Handymen read their job messages"
   on public.messages for select
   using (
@@ -36,7 +36,7 @@ create policy "Handymen read their job messages"
       select 1 from public.job_applications
       where job_applications.job_id = messages.job_id
         and job_applications.handyman_id = auth.uid()
-        and job_applications.status = 'accepted'
+        and job_applications.status in ('pending', 'accepted')
     )
   );
 
@@ -52,7 +52,7 @@ create policy "Clients insert messages"
     )
   );
 
--- Handymen can send messages on jobs they have an accepted application for
+-- Handymen can send messages on jobs they have a pending or accepted application for
 create policy "Handymen insert messages"
   on public.messages for insert
   with check (
@@ -61,7 +61,7 @@ create policy "Handymen insert messages"
       select 1 from public.job_applications
       where job_applications.job_id = messages.job_id
         and job_applications.handyman_id = auth.uid()
-        and job_applications.status = 'accepted'
+        and job_applications.status in ('pending', 'accepted')
     )
   );
 

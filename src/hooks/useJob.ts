@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 import { supabase } from '@/services/supabase';
 import { Job, Profile } from '@/types/database';
@@ -19,6 +19,12 @@ export const useJob = (jobId: string): UseJobResult => {
   const [job, setJob] = useState<Job | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Unique channel suffix per hook instance so multiple components (e.g.
+  // JobProgressScreen + ChatScreen) subscribing to the same job don't collide
+  // on a shared channel name — which triggers "cannot add postgres_changes
+  // callbacks after subscribe()".
+  const channelIdRef = useRef<string>(Math.random().toString(36).slice(2));
 
   useEffect(() => {
     let cancelled = false;
@@ -78,11 +84,12 @@ export const useJob = (jobId: string): UseJobResult => {
 
         const handymanIds = Array.from(new Set(apps.map(a => a.handyman_id)));
 
-        let handymenById: Record<string, Pick<Profile, 'id' | 'full_name'>> = {};
+        type HandymanLite = Pick<Profile, 'id' | 'full_name' | 'email'>;
+        let handymenById: Record<string, HandymanLite> = {};
         if (handymanIds.length > 0) {
           const { data: handymenRows, error: handymenError } = await supabase
             .from('profiles')
-            .select('id, full_name')
+            .select('id, full_name, email')
             .in('id', handymanIds);
 
           if (cancelled) return;
@@ -91,8 +98,8 @@ export const useJob = (jobId: string): UseJobResult => {
             return;
           }
 
-          handymenById = (handymenRows ?? []).reduce<Record<string, Pick<Profile, 'id' | 'full_name'>>>(
-            (acc, p) => { acc[p.id] = p; return acc; },
+          handymenById = (handymenRows ?? []).reduce<Record<string, HandymanLite>>(
+            (acc, p) => { acc[p.id] = p as HandymanLite; return acc; },
             {},
           );
         }
@@ -100,10 +107,15 @@ export const useJob = (jobId: string): UseJobResult => {
         setJob({
           ...baseJob,
           client: (clientRow ?? undefined) as Profile | undefined,
-          job_applications: apps.map(a => ({
-            status: a.status,
-            handyman: handymenById[a.handyman_id] ?? null,
-          })),
+          job_applications: apps.map(a => {
+            const h = handymenById[a.handyman_id];
+            return {
+              status: a.status,
+              handyman: h
+                ? { id: h.id, full_name: h.full_name ?? h.email.split('@')[0] ?? 'Pro' }
+                : null,
+            };
+          }),
         });
         setError(null);
       } finally {
@@ -113,8 +125,10 @@ export const useJob = (jobId: string): UseJobResult => {
 
     fetchJob();
 
-    const channel = supabase
-      .channel(`job-detail:${jobId}`)
+    const suffix = channelIdRef.current;
+
+    const jobChannel = supabase
+      .channel(`job-detail:${jobId}:${suffix}`)
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'jobs', filter: `id=eq.${jobId}` },
@@ -122,9 +136,19 @@ export const useJob = (jobId: string): UseJobResult => {
       )
       .subscribe();
 
+    const appsChannel = supabase
+      .channel(`job-apps:${jobId}:${suffix}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'job_applications', filter: `job_id=eq.${jobId}` },
+        () => { fetchJob(); },
+      )
+      .subscribe();
+
     return () => {
       cancelled = true;
-      supabase.removeChannel(channel);
+      supabase.removeChannel(jobChannel);
+      supabase.removeChannel(appsChannel);
     };
   }, [jobId]);
 

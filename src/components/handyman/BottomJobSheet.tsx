@@ -186,7 +186,7 @@ const BottomJobSheet = ({
               {isAccepting ? (
                 <ActivityIndicator color="#ffffff" />
               ) : (
-                <Text className="text-on-primary font-extrabold text-base">Accept</Text>
+                <Text className="text-on-primary font-extrabold text-base">Apply</Text>
               )}
             </Pressable>
           </View>

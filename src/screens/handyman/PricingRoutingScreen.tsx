@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   Pressable,
-  TextInput,
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
@@ -149,59 +148,33 @@ const PricingRoutingScreen = ({ navigation, route }: PricingRoutingScreenProps) 
   const { user } = useAuth();
   const { jobId, jobTitle, jobAddress, category } = route.params;
 
-  const [estimate, setEstimate] = useState('');
-  const [isConfirming, setIsConfirming] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
 
   const catConfig = CATEGORY_ICONS[category ?? 'General'] ?? CATEGORY_ICONS.General;
-  const estimateNum = parseFloat(estimate);
-  const isValid = !isNaN(estimateNum) && estimateNum > 0;
 
-  const handleConfirm = async () => {
-    if (!user || !isValid) return;
+  const handleApply = async () => {
+    if (!user) return;
 
-    setIsConfirming(true);
+    setIsApplying(true);
 
     try {
-      // Insert job application marking this handyman as accepted
       const { error: appError } = await supabase
         .from('job_applications')
         .insert({
           job_id: jobId,
           handyman_id: user.id,
-          status: 'accepted',
+          status: 'pending',
         });
 
-      if (appError) {
-        // Ignore unique constraint violation — handyman already applied
-        if (appError.code !== '23505') {
-          Alert.alert('Error', appError.message ?? 'Failed to submit application.');
-          return;
-        }
-      }
-
-      // Update the job: mark as accepted, assign this handyman, store price in payout
-      const { error: jobError } = await supabase
-        .from('jobs')
-        .update({
-          status: 'accepted',
-          handyman_id: user.id,
-          payout: estimateNum,
-        })
-        .eq('id', jobId);
-
-      if (jobError) {
-        Alert.alert('Error', jobError.message ?? 'Failed to update job.');
+      if (appError && appError.code !== '23505') {
+        Alert.alert('Error', appError.message ?? 'Failed to submit application.');
         return;
       }
 
-      // Navigate back to the Tabs root — job is now accepted
+      // Back to tabs — the application now shows in "Applied" on MyJobs.
       navigation.navigate('Tabs');
-    } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : 'Something went wrong. Please try again.';
-      Alert.alert('Error', msg);
     } finally {
-      setIsConfirming(false);
+      setIsApplying(false);
     }
   };
 
@@ -240,56 +213,22 @@ const PricingRoutingScreen = ({ navigation, route }: PricingRoutingScreenProps) 
 
           <View className="h-6" />
 
-          {/* Pricing form */}
+          {/* Apply explainer */}
           <View
             className="bg-surface-container-low rounded-xl p-6 mb-5"
             style={{ shadowColor: '#1a1c1e', shadowOpacity: 0.03, shadowRadius: 6, elevation: 1 }}
           >
             <Text className="text-2xl font-extrabold text-on-surface tracking-tight mb-1">
-              Price Estimate
+              Apply for this job
             </Text>
             <Text className="text-on-surface-variant text-sm mb-5 leading-relaxed">
-              Provide a ballpark figure for the client's approval before starting the commute.
+              The client will review your profile and can chat with you before committing. Once they accept, the job is yours.
             </Text>
 
-            {/* Minimum show-up fee badge */}
-            <View className="flex-row items-center gap-x-3 bg-tertiary-fixed px-4 py-3 rounded-full mb-5">
-              <Ionicons name="shield-checkmark" size={18} color="#005231" />
+            <View className="flex-row items-center gap-x-3 bg-tertiary-fixed px-4 py-3 rounded-full mb-2">
+              <Ionicons name="chatbubble-ellipses-outline" size={18} color="#005231" />
               <Text className="text-sm font-bold text-on-tertiary-fixed-variant">
-                Minimum Show-Up Fee ($50)
-              </Text>
-            </View>
-
-            {/* Estimate input */}
-            <View className="mb-4">
-              <Text className="text-sm font-semibold text-on-surface-variant mb-2 ml-1">
-                Estimated Job Cost ($)
-              </Text>
-              <View
-                className="flex-row items-center bg-surface-container-highest rounded-xl overflow-hidden"
-                style={{ paddingHorizontal: 20, paddingVertical: 4 }}
-              >
-                <Text className="text-2xl font-extrabold text-on-surface-variant mr-1">$</Text>
-                <TextInput
-                  className="flex-1 text-2xl font-extrabold text-on-surface"
-                  style={{ paddingVertical: 16 }}
-                  value={estimate}
-                  onChangeText={setEstimate}
-                  placeholder="0.00"
-                  placeholderTextColor="#74777f"
-                  keyboardType="decimal-pad"
-                  returnKeyType="done"
-                />
-              </View>
-            </View>
-
-            {/* Info notice */}
-            <View
-              className="bg-surface-container-lowest rounded-xl p-4 flex-row items-start gap-x-3"
-            >
-              <Ionicons name="information-circle-outline" size={18} color="#e98633" style={{ marginTop: 1 }} />
-              <Text className="text-xs text-on-surface-variant leading-relaxed flex-1">
-                Final billing will occur on-site. This estimate helps the client manage expectations and ensures you are compensated for your travel.
+                Chat opens after you apply
               </Text>
             </View>
           </View>
@@ -349,32 +288,25 @@ const PricingRoutingScreen = ({ navigation, route }: PricingRoutingScreenProps) 
           <Pressable
             className="w-full h-16 rounded-full flex-row items-center justify-center gap-x-3"
             style={({ pressed }) => ({
-              backgroundColor: isValid ? '#371800' : '#e9e7eb',
-              opacity: pressed || isConfirming ? 0.85 : 1,
-              transform: [{ scale: pressed && !isConfirming ? 0.98 : 1 }],
+              backgroundColor: '#371800',
+              opacity: pressed || isApplying ? 0.85 : 1,
+              transform: [{ scale: pressed && !isApplying ? 0.98 : 1 }],
               shadowColor: '#371800',
-              shadowOpacity: isValid ? 0.3 : 0,
+              shadowOpacity: 0.3,
               shadowRadius: 16,
               shadowOffset: { width: 0, height: 6 },
-              elevation: isValid ? 6 : 0,
+              elevation: 6,
             })}
-            onPress={handleConfirm}
-            disabled={!isValid || isConfirming}
+            onPress={handleApply}
+            disabled={isApplying}
           >
-            {isConfirming ? (
+            {isApplying ? (
               <ActivityIndicator color="#ffffff" />
             ) : (
               <>
-                <Ionicons
-                  name="navigate"
-                  size={20}
-                  color={isValid ? '#ffffff' : '#74777f'}
-                />
-                <Text
-                  className="font-extrabold text-lg"
-                  style={{ color: isValid ? '#ffffff' : '#74777f' }}
-                >
-                  Confirm &amp; Start Navigation
+                <Ionicons name="paper-plane-outline" size={20} color="#ffffff" />
+                <Text className="font-extrabold text-lg text-white">
+                  Submit Application
                 </Text>
               </>
             )}

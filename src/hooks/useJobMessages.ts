@@ -1,30 +1,72 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 import { supabase } from '@/services/supabase';
-import { Message } from '@/types/database';
+import { Message, Profile } from '@/types/database';
 
 interface UseJobMessagesResult {
   messages: Message[];
   isLoading: boolean;
+  error: string | null;
   sendMessage: (content: string, senderId: string) => Promise<void>;
 }
+
+type SenderLite = Pick<Profile, 'id' | 'full_name' | 'role'>;
+
+const enrich = (rows: Message[], sendersById: Record<string, SenderLite>): Message[] =>
+  rows.map(r => ({ ...r, sender: sendersById[r.sender_id] as Profile | undefined }));
 
 export const useJobMessages = (jobId: string): UseJobMessagesResult => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Cache resolved sender profiles across realtime events.
+  const sendersRef = useRef<Record<string, SenderLite>>({});
+
+  // Unique channel suffix per hook instance to avoid shared-channel collisions.
+  const channelIdRef = useRef<string>(Math.random().toString(36).slice(2));
+
+  const resolveSenders = useCallback(async (senderIds: string[]): Promise<Record<string, SenderLite>> => {
+    const missing = senderIds.filter(id => !sendersRef.current[id]);
+    if (missing.length === 0) return sendersRef.current;
+
+    const { data, error: sErr } = await supabase
+      .from('profiles')
+      .select('id, full_name, role')
+      .in('id', missing);
+
+    if (!sErr && data) {
+      for (const p of data as SenderLite[]) {
+        sendersRef.current[p.id] = p;
+      }
+    }
+    return sendersRef.current;
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
 
     const fetchMessages = async () => {
       try {
-        const { data } = await supabase
+        const { data, error: dbError } = await supabase
           .from('messages')
-          .select('*, sender:profiles!messages_sender_id_fkey(id, full_name, role)')
+          .select('*')
           .eq('job_id', jobId)
           .order('created_at', { ascending: true });
 
-        if (!cancelled && data) setMessages(data as Message[]);
+        if (cancelled) return;
+        if (dbError) {
+          setError(dbError.message);
+          return;
+        }
+
+        const rows = (data ?? []) as Message[];
+        const senderIds = Array.from(new Set(rows.map(r => r.sender_id)));
+        const senders = await resolveSenders(senderIds);
+        if (cancelled) return;
+
+        setMessages(enrich(rows, senders));
+        setError(null);
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -32,27 +74,25 @@ export const useJobMessages = (jobId: string): UseJobMessagesResult => {
 
     fetchMessages();
 
-    // Real-time: append new messages as they arrive
     const channel = supabase
-      .channel(`messages:${jobId}`)
+      .channel(`messages:${jobId}:${channelIdRef.current}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `job_id=eq.${jobId}` },
         async (payload) => {
-          // Fetch the full row with sender join so we have the sender profile
-          const { data } = await supabase
-            .from('messages')
-            .select('*, sender:profiles!messages_sender_id_fkey(id, full_name, role)')
-            .eq('id', (payload.new as Message).id)
-            .single();
+          const incoming = payload.new as Message;
+          const senders = await resolveSenders([incoming.sender_id]);
+          if (cancelled) return;
 
-          if (!cancelled && data) {
-            setMessages(prev => {
-              // Avoid duplicates (local optimistic insert may already exist)
-              if (prev.some(m => m.id === (data as Message).id)) return prev;
-              return [...prev, data as Message];
-            });
-          }
+          setMessages(prev => {
+            if (prev.some(m => m.id === incoming.id)) return prev;
+            // Replace any optimistic row from this sender with matching content,
+            // preserving order.
+            const withoutOptimistic = prev.filter(
+              m => !(m.id.startsWith('opt-') && m.sender_id === incoming.sender_id && m.content === incoming.content),
+            );
+            return [...withoutOptimistic, { ...incoming, sender: senders[incoming.sender_id] as Profile | undefined }];
+          });
         },
       )
       .subscribe();
@@ -61,13 +101,12 @@ export const useJobMessages = (jobId: string): UseJobMessagesResult => {
       cancelled = true;
       supabase.removeChannel(channel);
     };
-  }, [jobId]);
+  }, [jobId, resolveSenders]);
 
   const sendMessage = useCallback(async (content: string, senderId: string) => {
     const trimmed = content.trim();
     if (!trimmed) return;
 
-    // Optimistic insert (temporary ID, no sender join)
     const optimistic: Message = {
       id: `opt-${Date.now()}`,
       job_id: jobId,
@@ -77,19 +116,17 @@ export const useJobMessages = (jobId: string): UseJobMessagesResult => {
     };
     setMessages(prev => [...prev, optimistic]);
 
-    try {
-      const { error } = await supabase.from('messages').insert({
-        job_id: jobId,
-        sender_id: senderId,
-        content: trimmed,
-      });
-      if (error) throw error;
-      // The real-time subscription will replace the optimistic entry
-    } catch {
-      // Roll back optimistic message on failure
+    const { error: insertError } = await supabase.from('messages').insert({
+      job_id: jobId,
+      sender_id: senderId,
+      content: trimmed,
+    });
+
+    if (insertError) {
       setMessages(prev => prev.filter(m => m.id !== optimistic.id));
+      setError(insertError.message);
     }
   }, [jobId]);
 
-  return { messages, isLoading, sendMessage };
+  return { messages, isLoading, error, sendMessage };
 };

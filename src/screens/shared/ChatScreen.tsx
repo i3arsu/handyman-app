@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -175,9 +176,15 @@ const ChatScreen = () => {
 
   const { user } = useAuth();
   const { job } = useJob(jobId);
-  const { messages, isLoading, sendMessage } = useJobMessages(jobId);
+  const { messages, isLoading, error: chatError, sendMessage } = useJobMessages(jobId);
   const [draft, setDraft] = useState('');
   const scrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    if (chatError) {
+      Alert.alert('Chat error', chatError);
+    }
+  }, [chatError]);
 
   useEffect(() => {
     if (messages.length > 0) {

@@ -17,7 +17,7 @@ type MyJobsNavigationProp = CompositeNavigationProp<
 
 interface MyJobsScreenProps { navigation: MyJobsNavigationProp; }
 
-type Tab = 'active' | 'past';
+type Tab = 'applied' | 'active' | 'past';
 
 const CATEGORY_ICONS: Record<string, { icon: keyof typeof Ionicons.glyphMap; bg: string }> = {
   Plumbing:    { icon: 'water-outline',       bg: '#ffdcc5' },
@@ -38,6 +38,8 @@ const STATUS_BADGE: Record<JobStatus, { label: string; bg: string; fg: string }>
   cancelled:   { label: 'Cancelled',   bg: '#ffdad6', fg: '#93000a' },
 };
 
+const APPLIED_BADGE = { label: 'Awaiting Reply', bg: '#ffdcc5', fg: '#703700' };
+
 const getInitials = (name: string): string =>
   name.split(' ').map(n => n[0] ?? '').join('').toUpperCase().slice(0, 2) || '?';
 
@@ -54,11 +56,12 @@ interface JobCardProps {
   onManage: () => void;
   onChat?: () => void;
   showChat: boolean;
+  applied?: boolean;
 }
 
-const JobCard = ({ job, onManage, onChat, showChat }: JobCardProps) => {
+const JobCard = ({ job, onManage, onChat, showChat, applied }: JobCardProps) => {
   const cat = CATEGORY_ICONS[job.category] ?? CATEGORY_ICONS.General;
-  const badge = STATUS_BADGE[job.status];
+  const badge = applied ? APPLIED_BADGE : STATUS_BADGE[job.status];
   const clientName = job.client?.full_name ?? 'Client';
   const clientInitials = getInitials(clientName);
 
@@ -160,41 +163,54 @@ const JobCard = ({ job, onManage, onChat, showChat }: JobCardProps) => {
 // ─── Empty state ──────────────────────────────────────────────────────────────
 interface EmptyStateProps { tab: Tab; onBrowse: () => void; }
 
-const EmptyState = ({ tab, onBrowse }: EmptyStateProps) => (
-  <View className="items-center py-20 px-8">
-    <View className="w-16 h-16 rounded-full bg-surface-container-low items-center justify-center mb-4">
-      <Ionicons
-        name={tab === 'active' ? 'briefcase-outline' : 'archive-outline'}
-        size={28}
-        color="#43474e"
-      />
+const EMPTY_COPY: Record<Tab, { icon: keyof typeof Ionicons.glyphMap; title: string; body: string }> = {
+  applied: {
+    icon: 'paper-plane-outline',
+    title: 'No pending applications',
+    body: "Apply for an open job and it'll show up here until the client decides.",
+  },
+  active: {
+    icon: 'briefcase-outline',
+    title: 'No active jobs',
+    body: 'Accepted jobs will appear here. Browse open jobs to find your next gig.',
+  },
+  past: {
+    icon: 'archive-outline',
+    title: 'No past jobs',
+    body: 'Completed and cancelled jobs will appear here.',
+  },
+};
+
+const EmptyState = ({ tab, onBrowse }: EmptyStateProps) => {
+  const copy = EMPTY_COPY[tab];
+  return (
+    <View className="items-center py-20 px-8">
+      <View className="w-16 h-16 rounded-full bg-surface-container-low items-center justify-center mb-4">
+        <Ionicons name={copy.icon} size={28} color="#43474e" />
+      </View>
+      <Text className="text-on-surface font-extrabold text-lg text-center">{copy.title}</Text>
+      <Text className="text-on-surface-variant text-sm text-center mt-2 leading-relaxed">
+        {copy.body}
+      </Text>
+      {tab !== 'past' && (
+        <Pressable
+          className="mt-6 px-6 py-3 rounded-full bg-primary"
+          style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
+          onPress={onBrowse}
+        >
+          <Text className="text-on-primary font-extrabold text-sm">Browse Jobs</Text>
+        </Pressable>
+      )}
     </View>
-    <Text className="text-on-surface font-extrabold text-lg text-center">
-      {tab === 'active' ? 'No active jobs' : 'No past jobs'}
-    </Text>
-    <Text className="text-on-surface-variant text-sm text-center mt-2 leading-relaxed">
-      {tab === 'active'
-        ? 'Accepted jobs will appear here. Browse open jobs to find your next gig.'
-        : 'Completed and cancelled jobs will appear here.'}
-    </Text>
-    {tab === 'active' && (
-      <Pressable
-        className="mt-6 px-6 py-3 rounded-full bg-primary"
-        style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
-        onPress={onBrowse}
-      >
-        <Text className="text-on-primary font-extrabold text-sm">Browse Jobs</Text>
-      </Pressable>
-    )}
-  </View>
-);
+  );
+};
 
 // ─── Segmented control ────────────────────────────────────────────────────────
 interface SegmentedProps { tab: Tab; onChange: (t: Tab) => void; }
 
 const Segmented = ({ tab, onChange }: SegmentedProps) => (
   <View className="bg-surface-container-low p-1.5 rounded-full flex-row mb-6">
-    {(['active', 'past'] as const).map((t) => {
+    {(['applied', 'active', 'past'] as const).map((t) => {
       const isActive = tab === t;
       return (
         <Pressable
@@ -224,12 +240,15 @@ const Segmented = ({ tab, onChange }: SegmentedProps) => (
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 const MyJobsScreen = ({ navigation }: MyJobsScreenProps) => {
-  const { activeJobs, pastJobs, isLoading, error, refetch } = useHandymanJobs();
+  const { appliedJobs, activeJobs, pastJobs, isLoading, error, refetch } = useHandymanJobs();
   const [tab, setTab] = useState<Tab>('active');
 
   useFocusEffect(useCallback(() => { refetch(); }, [refetch]));
 
-  const jobs = tab === 'active' ? activeJobs : pastJobs;
+  const jobs =
+    tab === 'applied' ? appliedJobs :
+    tab === 'active'  ? activeJobs  :
+    pastJobs;
 
   const handleManage = (job: Job) => {
     navigation.navigate('JobInformation', {
@@ -301,7 +320,8 @@ const MyJobsScreen = ({ navigation }: MyJobsScreenProps) => {
               <JobCard
                 key={job.id}
                 job={job}
-                showChat={tab === 'active'}
+                applied={tab === 'applied'}
+                showChat={tab === 'active' || tab === 'applied'}
                 onManage={() => handleManage(job)}
                 onChat={() => handleChat(job)}
               />

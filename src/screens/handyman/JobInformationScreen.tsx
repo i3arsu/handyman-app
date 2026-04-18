@@ -338,7 +338,7 @@ const JobInformationScreen = ({ navigation, route }: JobInformationScreenProps) 
               }}
             >
               <Text style={{ color: '#ffffff', fontWeight: '800', fontSize: 17 }}>
-                Accept &amp; Set Quote
+                Apply for this Job
               </Text>
               <Ionicons name="arrow-forward" size={20} color="#ffffff" />
             </View>

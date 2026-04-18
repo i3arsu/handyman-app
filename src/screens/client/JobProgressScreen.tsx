@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -268,6 +268,69 @@ const AwaitingCard = () => (
   </View>
 );
 
+// ─── Applicant row ────────────────────────────────────────────────────────────
+interface ApplicantRowProps {
+  name: string;
+  initials: string;
+  onChat: () => void;
+  onAccept: () => void;
+  isAccepting: boolean;
+}
+
+const ApplicantRow = ({ name, initials, onChat, onAccept, isAccepting }: ApplicantRowProps) => (
+  <View
+    className="bg-surface-container-lowest rounded-xl p-4 mb-3 flex-row items-center gap-x-3"
+    style={{ shadowColor: '#1a1c1e', shadowOpacity: 0.04, shadowRadius: 6, elevation: 1 }}
+  >
+    <View className="w-11 h-11 rounded-full bg-secondary items-center justify-center">
+      <Text className="text-white font-extrabold text-sm">{initials}</Text>
+    </View>
+    <View className="flex-1">
+      <Text className="text-xs font-medium text-on-surface-variant leading-none mb-0.5">
+        Handyman
+      </Text>
+      <Text className="text-sm font-extrabold text-on-surface" numberOfLines={1}>
+        {name}
+      </Text>
+    </View>
+    <Pressable
+      className="w-10 h-10 rounded-full bg-surface-container-high items-center justify-center"
+      style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+      onPress={onChat}
+    >
+      <Ionicons name="chatbubble-outline" size={16} color="#371800" />
+    </Pressable>
+    <Pressable
+      onPress={onAccept}
+      disabled={isAccepting}
+      style={({ pressed }) => ({
+        opacity: pressed || isAccepting ? 0.85 : 1,
+      })}
+    >
+      <View className="px-4 py-2.5 rounded-full bg-primary">
+        {isAccepting ? (
+          <ActivityIndicator color="#ffffff" size="small" />
+        ) : (
+          <Text className="text-white text-sm font-extrabold">Accept</Text>
+        )}
+      </View>
+    </Pressable>
+  </View>
+);
+
+interface Applicant { handymanId: string; name: string; initials: string; }
+
+const getApplicants = (job: Job): Applicant[] => {
+  const apps = job.job_applications ?? [];
+  return apps
+    .filter(a => a.status === 'pending' && a.handyman?.id)
+    .map<Applicant>(a => {
+      const name = a.handyman?.full_name ?? 'Handyman';
+      const initials = name.split(' ').map(n => n[0] ?? '').join('').toUpperCase().slice(0, 2) || '?';
+      return { handymanId: a.handyman!.id, name, initials };
+    });
+};
+
 // ─── Helper: extract accepted handyman from job ───────────────────────────────
 const getHandyman = (job: Job): { name: string; initials: string } | null => {
   const apps = job.job_applications ?? [];
@@ -282,6 +345,53 @@ const getHandyman = (job: Job): { name: string; initials: string } | null => {
 const JobProgressScreen = ({ navigation, route }: JobProgressScreenProps) => {
   const { jobId } = route.params;
   const { job, isLoading, error } = useJob(jobId);
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
+
+  const handleAcceptApplicant = async (handymanId: string) => {
+    setAcceptingId(handymanId);
+    try {
+      const { error: appsError } = await supabase
+        .from('job_applications')
+        .update({ status: 'rejected' })
+        .eq('job_id', jobId)
+        .neq('handyman_id', handymanId);
+
+      if (appsError) {
+        Alert.alert('Error', appsError.message);
+        return;
+      }
+
+      const { error: acceptError } = await supabase
+        .from('job_applications')
+        .update({ status: 'accepted' })
+        .eq('job_id', jobId)
+        .eq('handyman_id', handymanId);
+
+      if (acceptError) {
+        Alert.alert('Error', acceptError.message);
+        return;
+      }
+
+      const { error: jobError } = await supabase
+        .from('jobs')
+        .update({ status: 'accepted', handyman_id: handymanId })
+        .eq('id', jobId);
+
+      if (jobError) {
+        Alert.alert('Error', jobError.message);
+      }
+    } finally {
+      setAcceptingId(null);
+    }
+  };
+
+  const handleChatApplicant = (applicant: Applicant) => {
+    navigation.navigate('Chat', {
+      jobId,
+      counterpartyName: applicant.name,
+      counterpartyInitials: applicant.initials,
+    });
+  };
 
   const handleCancel = () => {
     Alert.alert(
@@ -321,6 +431,7 @@ const JobProgressScreen = ({ navigation, route }: JobProgressScreenProps) => {
   const statusCfg = STATUS_CONFIG[job.status];
   const catConfig = CATEGORY_ICONS[job.category] ?? CATEGORY_ICONS.General;
   const handyman   = getHandyman(job);
+  const applicants = getApplicants(job);
   const activeStage = statusToStage(job.status);
   const shortId = job.id.slice(0, 8).toUpperCase();
   const isActive = job.status === 'accepted' || job.status === 'in_progress';
@@ -410,10 +521,28 @@ const JobProgressScreen = ({ navigation, route }: JobProgressScreenProps) => {
           <InfoTile label="Payout"  value={job.payout > 0 ? `$${job.payout}` : 'TBD'} icon="cash-outline" />
         </View>
 
-        {/* ── Awaiting state ─────────────────────────────────────────────── */}
+        {/* ── Awaiting / Applicants state ────────────────────────────────── */}
         {job.status === 'open' && (
           <View className="mb-5">
-            <AwaitingCard />
+            {applicants.length === 0 ? (
+              <AwaitingCard />
+            ) : (
+              <>
+                <Text className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-3">
+                  {applicants.length} Applicant{applicants.length !== 1 ? 's' : ''}
+                </Text>
+                {applicants.map((a) => (
+                  <ApplicantRow
+                    key={a.handymanId}
+                    name={a.name}
+                    initials={a.initials}
+                    onChat={() => handleChatApplicant(a)}
+                    onAccept={() => handleAcceptApplicant(a.handymanId)}
+                    isAccepting={acceptingId === a.handymanId}
+                  />
+                ))}
+              </>
+            )}
           </View>
         )}
 

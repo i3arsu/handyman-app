@@ -133,7 +133,7 @@ const JobCard = ({ job, onPress, onAccept }: JobCardProps) => {
           })}
           onPress={onAccept}
         >
-          <Text className="text-on-primary font-extrabold text-sm">Accept</Text>
+          <Text className="text-on-primary font-extrabold text-sm">Apply</Text>
         </Pressable>
       </View>
     </Pressable>
