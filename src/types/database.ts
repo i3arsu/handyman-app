@@ -11,6 +11,9 @@ export interface Profile {
   full_name: string | null;
   avatar_url: string | null;
   role: UserRole;
+  notif_push: boolean;
+  notif_email_marketing: boolean;
+  notif_sms: boolean;
   created_at: string;
 }
 

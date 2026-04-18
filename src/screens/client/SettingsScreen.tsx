@@ -7,6 +7,7 @@ import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { supabase } from '@/services/supabase';
 import { useAuth } from '@/store/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
+import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
 import { ClientTabParamList } from '@/types/navigation';
 
 type SettingsScreenNavigationProp = BottomTabNavigationProp<ClientTabParamList, 'Settings'>;
@@ -155,10 +156,8 @@ const PaymentCard = ({ cardHolder }: PaymentCardProps) => (
 const SettingsScreen = (_props: SettingsScreenProps) => {
   const { user } = useAuth();
   const { profile } = useProfile();
+  const { preferences, setPreference } = useNotificationPreferences();
 
-  const [pushEnabled, setPushEnabled] = useState(true);
-  const [emailMarketing, setEmailMarketing] = useState(false);
-  const [smsAlerts, setSmsAlerts] = useState(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const email = profile?.email ?? user?.email ?? '—';
@@ -203,21 +202,21 @@ const SettingsScreen = (_props: SettingsScreenProps) => {
           <ToggleRow
             title="Push Notifications"
             subtitle="Job alerts and service updates"
-            value={pushEnabled}
-            onValueChange={setPushEnabled}
+            value={preferences?.notif_push ?? true}
+            onValueChange={(v) => setPreference('notif_push', v)}
             isFirst
           />
           <ToggleRow
             title="Email Marketing"
             subtitle="Newsletters and special offers"
-            value={emailMarketing}
-            onValueChange={setEmailMarketing}
+            value={preferences?.notif_email_marketing ?? false}
+            onValueChange={(v) => setPreference('notif_email_marketing', v)}
           />
           <ToggleRow
             title="SMS Alerts"
             subtitle="Immediate scheduling notifications"
-            value={smsAlerts}
-            onValueChange={setSmsAlerts}
+            value={preferences?.notif_sms ?? true}
+            onValueChange={(v) => setPreference('notif_sms', v)}
           />
         </View>
 

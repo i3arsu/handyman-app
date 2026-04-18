@@ -11,12 +11,15 @@ create extension if not exists "uuid-ossp";
 --    One row per auth.users entry. Written automatically on signup via trigger.
 -- ─────────────────────────────────────────────────────────────────────────────
 create table if not exists public.profiles (
-  id            uuid primary key references auth.users(id) on delete cascade,
-  email         text not null,
-  full_name     text,
-  avatar_url    text,
-  role          text not null check (role in ('client', 'handyman')),
-  created_at    timestamptz default now() not null
+  id                     uuid primary key references auth.users(id) on delete cascade,
+  email                  text not null,
+  full_name              text,
+  avatar_url             text,
+  role                   text not null check (role in ('client', 'handyman')),
+  notif_push             boolean not null default true,
+  notif_email_marketing  boolean not null default false,
+  notif_sms              boolean not null default true,
+  created_at             timestamptz default now() not null
 );
 
 -- Trigger: auto-create profile row when a new user signs up
