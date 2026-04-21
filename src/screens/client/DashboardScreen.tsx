@@ -175,7 +175,12 @@ const JobCard = ({ job, onPress }: JobCardProps) => {
 };
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
-const EmptyState = ({ tab }: { tab: 'active' | 'past' }) => (
+interface EmptyStateProps {
+  tab: 'active' | 'past';
+  onPostJob: () => void;
+}
+
+const EmptyState = ({ tab, onPostJob }: EmptyStateProps) => (
   <View className="items-center py-16 px-8">
     <View className="w-16 h-16 rounded-full bg-surface-container-low items-center justify-center mb-4">
       <Ionicons name={tab === 'active' ? 'construct-outline' : 'time-outline'} size={28} color="#43474e" />
@@ -188,6 +193,15 @@ const EmptyState = ({ tab }: { tab: 'active' | 'past' }) => (
         ? 'Post your first job and get matched with a nearby pro.'
         : 'Your completed jobs will appear here.'}
     </Text>
+    {tab === 'active' && (
+      <Pressable
+        className="mt-6 px-6 py-3 rounded-full bg-primary"
+        style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
+        onPress={onPostJob}
+      >
+        <Text className="text-on-primary font-extrabold text-sm">Post a Job</Text>
+      </Pressable>
+    )}
   </View>
 );
 
@@ -274,7 +288,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps) => {
           showsVerticalScrollIndicator={false}
         >
           {jobs.length === 0 ? (
-            <EmptyState tab={activeTab} />
+            <EmptyState tab={activeTab} onPostJob={() => navigation.navigate('Explore')} />
           ) : (
             jobs.map((job) => (
               <JobCard

@@ -4,9 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
+import { supabase } from '@/services/supabase';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useProfile } from '@/hooks/useProfile';
-import { Notification, NotificationType } from '@/types/database';
+import { Job, Notification, NotificationType } from '@/types/database';
 
 // ─── Icon config ──────────────────────────────────────────────────────────────
 const TYPE_CONFIG: Record<
@@ -120,16 +121,42 @@ const NotificationsScreen = () => {
     markAllAsRead,
   } = useNotifications();
 
-  const handlePress = (n: Notification) => {
+  const handlePress = async (n: Notification) => {
     if (!n.read) {
       markAsRead(n.id);
     }
 
-    // Client-side navigation: tap any job-linked notification → JobProgress.
-    // On the handyman side we keep the tap as a mark-read action for now —
-    // JobInformation requires many route params we don't have here.
-    if (profile?.role === 'client' && n.job_id) {
+    if (!n.job_id) return;
+
+    // Clients deep-link to their JobProgress view.
+    if (profile?.role === 'client') {
       navigation.navigate('JobProgress', { jobId: n.job_id });
+      return;
+    }
+
+    // Handymen deep-link to JobInformation, which needs the full job row.
+    if (profile?.role === 'handyman') {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('id', n.job_id)
+        .maybeSingle();
+      if (error || !data) return;
+      const job = data as Job;
+      navigation.navigate('JobInformation', {
+        jobId: job.id,
+        jobTitle: job.title,
+        jobDescription: job.description,
+        jobAddress: job.address,
+        locationLat: job.location_lat,
+        locationLng: job.location_lng,
+        category: job.category,
+        isUrgent: job.is_urgent,
+        payout: job.payout,
+        showUpFee: job.show_up_fee,
+        scheduledStart: job.scheduled_start,
+        createdAt: job.created_at,
+      });
     }
   };
 

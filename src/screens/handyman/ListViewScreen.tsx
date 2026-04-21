@@ -142,14 +142,27 @@ const JobCard = ({ job, onPress, onAccept }: JobCardProps) => {
 };
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
-const EmptyState = () => (
+interface EmptyStateProps {
+  filteredOut: boolean;
+  radiusKm: number;
+}
+
+const EmptyState = ({ filteredOut, radiusKm }: EmptyStateProps) => (
   <View className="items-center py-20 px-8">
     <View className="w-16 h-16 rounded-full bg-surface-container-low items-center justify-center mb-4">
-      <Ionicons name="construct-outline" size={28} color="#43474e" />
+      <Ionicons
+        name={filteredOut ? 'locate-outline' : 'construct-outline'}
+        size={28}
+        color="#43474e"
+      />
     </View>
-    <Text className="text-on-surface font-extrabold text-lg text-center">No open jobs</Text>
+    <Text className="text-on-surface font-extrabold text-lg text-center">
+      {filteredOut ? 'Nothing within range' : 'No open jobs'}
+    </Text>
     <Text className="text-on-surface-variant text-sm text-center mt-2 leading-relaxed">
-      New jobs from clients in your area will appear here.
+      {filteredOut
+        ? `No jobs inside ${radiusKm} km. Expand your search radius in Profile to see more.`
+        : 'New jobs from clients in your area will appear here.'}
     </Text>
   </View>
 );
@@ -272,7 +285,7 @@ const ListViewScreen = ({ navigation }: ListViewScreenProps) => {
           showsVerticalScrollIndicator={false}
         >
           {filteredJobs.length === 0 ? (
-            <EmptyState />
+            <EmptyState filteredOut={jobs.length > 0} radiusKm={radiusKm} />
           ) : (
             filteredJobs.map((job) => (
               <JobCard
