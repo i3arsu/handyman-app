@@ -34,6 +34,7 @@ export interface Job {
   show_up_fee: number;
   is_urgent: boolean;
   status: JobStatus;
+  photo_urls: string[];
   created_at: string;
   // Joined fields (not in DB, populated by queries)
   client?: Profile;

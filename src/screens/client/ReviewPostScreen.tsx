@@ -6,6 +6,7 @@ import {
   Pressable,
   ActivityIndicator,
   Alert,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,11 +14,16 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { CompositeNavigationProp } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
+import * as Crypto from 'expo-crypto';
 
 import { supabase } from '@/services/supabase';
 import { useAuth } from '@/store/AuthContext';
 import { getErrorMessage } from '@/utils/errors';
+import { uploadJobPhotos } from '@/services/jobPhotos';
 import { PostJobStackParamList, ClientTabParamList } from '@/types/navigation';
+
+const MAX_PHOTOS = 4;
 
 type ReviewPostNavigationProp = CompositeNavigationProp<
   NativeStackNavigationProp<PostJobStackParamList, 'ReviewPost'>,
@@ -82,8 +88,34 @@ const ReviewPostScreen = ({ navigation, route }: ReviewPostScreenProps) => {
   const { user } = useAuth();
   const { category, title, description, address, latitude, longitude, isUrgent } = route.params;
   const [isPosting, setIsPosting] = useState(false);
+  const [photoUris, setPhotoUris] = useState<string[]>([]);
 
   const catConfig = CATEGORY_ICONS[category] ?? CATEGORY_ICONS.General;
+
+  const handleAddPhotos = async () => {
+    const slots = MAX_PHOTOS - photoUris.length;
+    if (slots <= 0) return;
+
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Allow photo library access to attach images.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      selectionLimit: slots,
+      quality: 0.7,
+    });
+
+    if (result.canceled) return;
+    setPhotoUris((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, MAX_PHOTOS));
+  };
+
+  const handleRemovePhoto = (uri: string) => {
+    setPhotoUris((prev) => prev.filter((u) => u !== uri));
+  };
 
   const handlePost = async () => {
     if (!user) return;
@@ -92,6 +124,12 @@ const ReviewPostScreen = ({ navigation, route }: ReviewPostScreenProps) => {
     let posted = false;
 
     try {
+      let photoUrls: string[] = [];
+      if (photoUris.length > 0) {
+        const draftId = Crypto.randomUUID();
+        photoUrls = await uploadJobPhotos(photoUris, user.id, draftId);
+      }
+
       const { error } = await supabase.from('jobs').insert({
         client_id: user.id,
         title,
@@ -104,6 +142,7 @@ const ReviewPostScreen = ({ navigation, route }: ReviewPostScreenProps) => {
         is_urgent: isUrgent,
         payout: 0,
         show_up_fee: 0,
+        photo_urls: photoUrls,
       });
 
       if (error) {
@@ -200,6 +239,66 @@ const ReviewPostScreen = ({ navigation, route }: ReviewPostScreenProps) => {
               <DetailRow label="Description" value={description} />
             )}
           </View>
+        </View>
+
+        {/* Photos card */}
+        <View className="bg-surface-container-lowest rounded-xl p-5 mb-5" style={{ borderWidth: 1, borderColor: 'rgba(196, 198, 207, 0.2)' }}>
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">
+              Photos (optional)
+            </Text>
+            <Text className="text-xs font-semibold text-on-surface-variant">
+              {photoUris.length}/{MAX_PHOTOS}
+            </Text>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+            {photoUris.map((uri) => (
+              <View key={uri} style={{ width: 88, height: 88, borderRadius: 12, overflow: 'hidden' }}>
+                <Image source={{ uri }} style={{ width: '100%', height: '100%' }} />
+                <Pressable
+                  onPress={() => handleRemovePhoto(uri)}
+                  style={({ pressed }) => ({
+                    position: 'absolute',
+                    top: 4,
+                    right: 4,
+                    width: 22,
+                    height: 22,
+                    borderRadius: 11,
+                    backgroundColor: 'rgba(26,28,30,0.8)',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
+                  <Ionicons name="close" size={14} color="#ffffff" />
+                </Pressable>
+              </View>
+            ))}
+            {photoUris.length < MAX_PHOTOS && (
+              <Pressable
+                onPress={handleAddPhotos}
+                disabled={isPosting}
+                style={({ pressed }) => ({
+                  width: 88,
+                  height: 88,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderStyle: 'dashed',
+                  borderColor: '#c4c6cf',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 4,
+                  opacity: pressed ? 0.7 : 1,
+                })}
+              >
+                <Ionicons name="camera-outline" size={22} color="#43474e" />
+                <Text className="text-xs font-semibold text-on-surface-variant">Add</Text>
+              </Pressable>
+            )}
+          </ScrollView>
+          <Text className="text-xs text-on-surface-variant mt-3 leading-relaxed">
+            Photos help handymen quote accurately before accepting.
+          </Text>
         </View>
 
         {/* Location card */}

@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -380,6 +381,24 @@ const JobInformationScreen = ({ navigation, route }: JobInformationScreenProps) 
             showDirections={isOwner && (job?.status === 'accepted' || job?.status === 'in_progress')}
           />
         </View>
+
+        {/* Photos */}
+        {(job?.photo_urls ?? []).length > 0 && (
+          <View style={{ marginBottom: 20 }}>
+            <Text style={{ fontSize: 10, fontWeight: '700', color: '#43474e', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 10 }}>
+              Photos
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+              {(job?.photo_urls ?? []).map((url) => (
+                <Image
+                  key={url}
+                  source={{ uri: url }}
+                  style={{ width: 160, height: 160, borderRadius: 12, backgroundColor: '#e9e7eb' }}
+                />
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         {/* Description */}
         {jobDescription ? (

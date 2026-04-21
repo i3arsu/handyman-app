@@ -65,6 +65,7 @@ create table if not exists public.jobs (
   is_urgent        boolean default false,
   status           text not null default 'open'
                    check (status in ('open', 'accepted', 'in_progress', 'completed', 'cancelled')),
+  photo_urls       text[] not null default '{}',
   created_at       timestamptz default now() not null
 );
 
