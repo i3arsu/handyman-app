@@ -7,6 +7,7 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -54,14 +55,34 @@ const formatTime = (iso: string | null): string => {
   });
 };
 
+// ─── Directions ──────────────────────────────────────────────────────────────
+const openDirections = async (lat: number, lng: number, label?: string | null) => {
+  const encodedLabel = encodeURIComponent(label ?? 'Job location');
+  const primary =
+    Platform.OS === 'ios'
+      ? `maps://?daddr=${lat},${lng}&q=${encodedLabel}`
+      : `google.navigation:q=${lat},${lng}`;
+  const fallback = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+
+  try {
+    const supported = await Linking.canOpenURL(primary);
+    await Linking.openURL(supported ? primary : fallback);
+  } catch {
+    Linking.openURL(fallback).catch(() => {
+      Alert.alert('Unable to open maps', 'No maps app is available on this device.');
+    });
+  }
+};
+
 // ─── Location map ────────────────────────────────────────────────────────────
 interface LocationMapProps {
   latitude: number | null;
   longitude: number | null;
   address: string | null;
+  showDirections: boolean;
 }
 
-const LocationMap = ({ latitude, longitude, address }: LocationMapProps) => {
+const LocationMap = ({ latitude, longitude, address, showDirections }: LocationMapProps) => {
   const hasCoords = latitude !== null && longitude !== null;
 
   return (
@@ -134,6 +155,26 @@ const LocationMap = ({ latitude, longitude, address }: LocationMapProps) => {
               {address}
             </Text>
           </View>
+          {showDirections && hasCoords && (
+            <Pressable
+              onPress={() => openDirections(latitude, longitude, address)}
+              style={({ pressed }) => ({
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 6,
+                backgroundColor: '#371800',
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                borderRadius: 999,
+                opacity: pressed ? 0.85 : 1,
+              })}
+            >
+              <Ionicons name="navigate-outline" size={14} color="#ffffff" />
+              <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '800' }}>
+                Directions
+              </Text>
+            </Pressable>
+          )}
         </View>
       ) : null}
     </View>
@@ -332,7 +373,12 @@ const JobInformationScreen = ({ navigation, route }: JobInformationScreenProps) 
 
         {/* Map + location */}
         <View style={{ marginBottom: 20 }}>
-          <LocationMap latitude={locationLat} longitude={locationLng} address={jobAddress} />
+          <LocationMap
+            latitude={locationLat}
+            longitude={locationLng}
+            address={jobAddress}
+            showDirections={isOwner && (job?.status === 'accepted' || job?.status === 'in_progress')}
+          />
         </View>
 
         {/* Description */}
