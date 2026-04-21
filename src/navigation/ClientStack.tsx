@@ -5,7 +5,7 @@ import ClientTabs from '@/navigation/ClientTabs';
 import JobProgressScreen from '@/screens/client/JobProgressScreen';
 import ChatScreen from '@/screens/shared/ChatScreen';
 import EditProfileScreen from '@/screens/shared/EditProfileScreen';
-import NotificationsScreen from '@/screens/client/NotificationsScreen';
+import NotificationsScreen from '@/screens/shared/NotificationsScreen';
 import { ClientStackParamList } from '@/types/navigation';
 
 const Stack = createNativeStackNavigator<ClientStackParamList>();

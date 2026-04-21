@@ -8,6 +8,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { useClientJobs } from '@/hooks/useClientJobs';
 import { useProfile } from '@/hooks/useProfile';
+import { NotificationBell } from '@/components/shared/NotificationBell';
 import { ClientTabParamList, ClientStackParamList } from '@/types/navigation';
 import { Job, JobStatus } from '@/types/database';
 
@@ -218,13 +219,7 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps) => {
       <View className="flex-row items-center justify-between px-6 pt-2 pb-4">
         <Text className="text-xl font-extrabold text-primary tracking-tight">My Jobs</Text>
         <View className="flex-row items-center gap-x-3">
-          <Pressable
-            className="w-10 h-10 rounded-full bg-surface-container-low items-center justify-center"
-            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-            onPress={() => navigation.navigate('Notifications')}
-          >
-            <Ionicons name="notifications-outline" size={20} color="#371800" />
-          </Pressable>
+          <NotificationBell onPress={() => navigation.navigate('Notifications')} />
           <Pressable
             className="w-10 h-10 rounded-full bg-secondary items-center justify-center"
             style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}

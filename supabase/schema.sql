@@ -153,3 +153,49 @@ create policy "Clients can update application status"
   using (
     auth.uid() = (select client_id from public.jobs where id = job_id)
   );
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 5. NOTIFICATIONS
+--    In-app inbox. Rows are written by Postgres triggers on the event sources
+--    (job_applications, jobs, messages). See migration 005_notifications.sql
+--    for the full trigger definitions. Users can only see their own rows.
+-- ─────────────────────────────────────────────────────────────────────────────
+create table if not exists public.notifications (
+  id          uuid primary key default uuid_generate_v4(),
+  user_id     uuid not null references public.profiles(id) on delete cascade,
+  type        text not null check (type in (
+    'application_received',
+    'application_accepted',
+    'application_rejected',
+    'job_started',
+    'job_completed',
+    'new_message',
+    'new_nearby_job'
+  )),
+  title       text not null,
+  body        text not null,
+  job_id      uuid references public.jobs(id) on delete cascade,
+  read        boolean not null default false,
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists notifications_user_unread_idx
+  on public.notifications(user_id, read, created_at desc);
+
+alter table public.notifications enable row level security;
+
+create policy "Users read their own notifications"
+  on public.notifications for select
+  to authenticated
+  using (user_id = auth.uid());
+
+create policy "Users update their own notifications"
+  on public.notifications for update
+  to authenticated
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
+create policy "Users insert their own notifications"
+  on public.notifications for insert
+  to authenticated
+  with check (user_id = auth.uid());

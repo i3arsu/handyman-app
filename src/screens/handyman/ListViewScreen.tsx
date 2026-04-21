@@ -12,6 +12,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { useOpenJobs } from '@/hooks/useOpenJobs';
+import { NotificationBell } from '@/components/shared/NotificationBell';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { useSearchRadius } from '@/hooks/useSearchRadius';
 import { getDistanceKm } from '@/utils/geo';
@@ -211,12 +212,10 @@ const ListViewScreen = ({ navigation }: ListViewScreenProps) => {
           </View>
           <Text className="text-xl font-extrabold text-primary tracking-tight">Reliant Home</Text>
         </View>
-        <Pressable
-          className="w-10 h-10 rounded-full bg-surface-container-low items-center justify-center"
-          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-        >
-          <Ionicons name="notifications-outline" size={20} color="#43474e" />
-        </Pressable>
+        <NotificationBell
+          iconColor="#43474e"
+          onPress={() => navigation.navigate('Notifications')}
+        />
       </View>
 
       {/* View toggle pill */}

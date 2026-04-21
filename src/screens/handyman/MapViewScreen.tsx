@@ -8,6 +8,7 @@ import { CompositeNavigationProp, useFocusEffect } from '@react-navigation/nativ
 import MapView, { Marker, Region, PROVIDER_GOOGLE } from 'react-native-maps';
 
 import BottomJobSheet from '@/components/handyman/BottomJobSheet';
+import { NotificationBell } from '@/components/shared/NotificationBell';
 import { useOpenJobs } from '@/hooks/useOpenJobs';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { useSearchRadius } from '@/hooks/useSearchRadius';
@@ -260,20 +261,11 @@ const MapViewScreen = ({ navigation }: MapViewScreenProps) => {
         <Text style={{ fontSize: 20, fontWeight: '800', color: '#371800', letterSpacing: -0.5 }}>
           Reliant Home
         </Text>
-        <Pressable
-          style={({ pressed }) => ({
-            width: 40,
-            height: 40,
-            borderRadius: 999,
-            backgroundColor: 'rgba(244,243,247,0.92)',
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: pressed ? 0.75 : 1,
-          })}
+        <NotificationBell
+          variant="tinted"
+          iconColor="#43474e"
           onPress={() => navigation.navigate('Notifications')}
-        >
-          <Ionicons name="notifications-outline" size={20} color="#43474e" />
-        </Pressable>
+        />
       </View>
 
       {/* View toggle pill */}

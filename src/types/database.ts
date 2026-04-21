@@ -54,6 +54,26 @@ export interface JobApplication {
   handyman?: Profile;
 }
 
+export type NotificationType =
+  | 'application_received'
+  | 'application_accepted'
+  | 'application_rejected'
+  | 'job_started'
+  | 'job_completed'
+  | 'new_message'
+  | 'new_nearby_job';
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  job_id: string | null;
+  read: boolean;
+  created_at: string;
+}
+
 export interface Message {
   id: string;
   job_id: string;

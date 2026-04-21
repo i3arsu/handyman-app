@@ -7,6 +7,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CompositeNavigationProp, useFocusEffect } from '@react-navigation/native';
 
 import { useHandymanJobs } from '@/hooks/useHandymanJobs';
+import { NotificationBell } from '@/components/shared/NotificationBell';
 import { HandymanTabParamList, HandymanStackParamList } from '@/types/navigation';
 import { Job, JobStatus } from '@/types/database';
 
@@ -285,13 +286,10 @@ const MyJobsScreen = ({ navigation }: MyJobsScreenProps) => {
       {/* App bar */}
       <View className="flex-row items-center justify-between px-6 pt-2 pb-3">
         <Text className="text-2xl font-extrabold text-primary tracking-tight">My Jobs</Text>
-        <Pressable
-          className="w-10 h-10 rounded-full bg-surface-container-low items-center justify-center"
-          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+        <NotificationBell
+          iconColor="#43474e"
           onPress={() => navigation.navigate('Notifications')}
-        >
-          <Ionicons name="notifications-outline" size={20} color="#43474e" />
-        </Pressable>
+        />
       </View>
 
       <View className="px-6">

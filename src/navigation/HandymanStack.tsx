@@ -5,16 +5,18 @@ import HandymanTabs from '@/navigation/HandymanTabs';
 import JobInformationScreen from '@/screens/handyman/JobInformationScreen';
 import ListViewScreen from '@/screens/handyman/ListViewScreen';
 import PricingRoutingScreen from '@/screens/handyman/PricingRoutingScreen';
-import NotificationsScreen from '@/screens/client/NotificationsScreen';
+import NotificationsScreen from '@/screens/shared/NotificationsScreen';
 import ChatScreen from '@/screens/shared/ChatScreen';
 import EditProfileScreen from '@/screens/shared/EditProfileScreen';
 import { SearchRadiusProvider } from '@/hooks/useSearchRadius';
+import { NearbyJobAlerts } from '@/components/shared/NearbyJobAlerts';
 import { HandymanStackParamList } from '@/types/navigation';
 
 const Stack = createNativeStackNavigator<HandymanStackParamList>();
 
 const HandymanStack = () => (
   <SearchRadiusProvider>
+    <NearbyJobAlerts />
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Tabs" component={HandymanTabs} />
       <Stack.Screen
