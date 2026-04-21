@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import * as Location from 'expo-location';
 
+import { getErrorMessage } from '@/utils/errors';
+
 interface UserLocation {
   latitude: number;
   longitude: number;
@@ -50,9 +52,7 @@ export const useUserLocation = (): UseUserLocationResult => {
         });
       } catch (err) {
         if (cancelled) return;
-        setError(
-          err instanceof Error ? err.message : 'Failed to get location',
-        );
+        setError(getErrorMessage(err, 'Failed to get location'));
       } finally {
         if (!cancelled) setIsLoading(false);
       }

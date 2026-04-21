@@ -16,6 +16,7 @@ import { CompositeNavigationProp } from '@react-navigation/native';
 
 import { supabase } from '@/services/supabase';
 import { useAuth } from '@/store/AuthContext';
+import { getErrorMessage } from '@/utils/errors';
 import { PostJobStackParamList, ClientTabParamList } from '@/types/navigation';
 
 type ReviewPostNavigationProp = CompositeNavigationProp<
@@ -106,22 +107,16 @@ const ReviewPostScreen = ({ navigation, route }: ReviewPostScreenProps) => {
       });
 
       if (error) {
-        // PostgrestError is a plain object, not an Error instance — extract the
-        // message directly so the alert shows the real Supabase error.
-        const msg = error.message ?? error.details ?? 'Unknown database error.';
-        Alert.alert('Error posting job', `${msg}\n\nCode: ${error.code ?? '—'}`);
+        Alert.alert(
+          'Error posting job',
+          `${getErrorMessage(error, 'Unknown database error.')}\n\nCode: ${error.code ?? '—'}`,
+        );
         return;
       }
 
       posted = true;
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error
-          ? err.message
-          : typeof err === 'object' && err !== null && 'message' in err
-            ? String((err as { message: unknown }).message)
-            : 'Something went wrong. Please try again.';
-      Alert.alert('Error', msg);
+      Alert.alert('Error', getErrorMessage(err));
     } finally {
       setIsPosting(false);
     }
