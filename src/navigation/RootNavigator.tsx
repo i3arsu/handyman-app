@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AuthStack from './AuthStack';
 import ClientStack from './ClientStack';
 import HandymanStack from './HandymanStack';
+import { usePushRegistration } from '@/hooks/usePushRegistration';
 import { UserRole } from '@/types/auth';
 import { RootStackParamList } from '@/types/navigation';
 
@@ -26,6 +27,8 @@ interface RootNavigatorProps {
  *   handyman         → "HandymanApp"→ HandymanTabs (MapView, ListView, Profile)
  */
 const RootNavigator = ({ isAuthenticated, userRole }: RootNavigatorProps) => {
+  usePushRegistration();
+
   return (
     <Stack.Navigator screenOptions={{ headerShown: false, animation: 'none' }}>
       {!isAuthenticated ? (

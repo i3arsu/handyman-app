@@ -20,6 +20,7 @@ create table if not exists public.profiles (
   notif_push             boolean not null default true,
   notif_email_marketing  boolean not null default false,
   notif_sms              boolean not null default true,
+  expo_push_token        text,
   created_at             timestamptz default now() not null
 );
 
