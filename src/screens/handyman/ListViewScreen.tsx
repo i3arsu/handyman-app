@@ -16,6 +16,8 @@ import { NotificationBell } from '@/components/shared/NotificationBell';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { useSearchRadius } from '@/hooks/useSearchRadius';
 import { getDistanceKm } from '@/utils/geo';
+import { getCategoryIcon } from '@/constants/jobs';
+import { formatJobDate } from '@/utils/format';
 import { HandymanStackParamList } from '@/types/navigation';
 import { Job } from '@/types/database';
 
@@ -25,25 +27,6 @@ interface ListViewScreenProps {
   navigation: ListViewScreenNavigationProp;
 }
 
-// ─── Category icon map ────────────────────────────────────────────────────────
-const CATEGORY_ICONS: Record<string, { icon: keyof typeof Ionicons.glyphMap; bg: string }> = {
-  Plumbing:    { icon: 'water-outline',       bg: '#ffdcc5' },
-  Electrical:  { icon: 'flash-outline',        bg: '#9ff5c1' },
-  HVAC:        { icon: 'thermometer-outline',  bg: '#9ff5c1' },
-  Painting:    { icon: 'brush-outline',        bg: '#e9e7eb' },
-  Locksmith:   { icon: 'key-outline',          bg: '#d6e3ff' },
-  Tiling:      { icon: 'grid-outline',         bg: '#ffdcc5' },
-  Carpentry:   { icon: 'hammer-outline',       bg: '#e9e7eb' },
-  General:     { icon: 'construct-outline',    bg: '#e9e7eb' },
-};
-
-const formatDate = (iso: string | null): string => {
-  if (!iso) return 'Flexible';
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
-  });
-};
-
 // ─── Job card ─────────────────────────────────────────────────────────────────
 interface JobCardProps {
   job: Job;
@@ -52,7 +35,7 @@ interface JobCardProps {
 }
 
 const JobCard = ({ job, onPress, onAccept }: JobCardProps) => {
-  const catConfig = CATEGORY_ICONS[job.category] ?? CATEGORY_ICONS.General;
+  const catConfig = getCategoryIcon(job.category);
 
   return (
     <Pressable
@@ -108,7 +91,7 @@ const JobCard = ({ job, onPress, onAccept }: JobCardProps) => {
         ) : null}
         <View className="flex-row items-center gap-x-1">
           <Ionicons name="time-outline" size={13} color="#43474e" />
-          <Text className="text-on-surface-variant text-xs">{formatDate(job.scheduled_start)}</Text>
+          <Text className="text-on-surface-variant text-xs">{formatJobDate(job.scheduled_start)}</Text>
         </View>
       </View>
 

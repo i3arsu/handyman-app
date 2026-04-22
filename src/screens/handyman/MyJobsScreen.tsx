@@ -7,9 +7,13 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CompositeNavigationProp, useFocusEffect } from '@react-navigation/native';
 
 import { useHandymanJobs } from '@/hooks/useHandymanJobs';
+import { useUnreadByJob } from '@/hooks/useUnreadByJob';
 import { NotificationBell } from '@/components/shared/NotificationBell';
+import { JobListCard } from '@/components/shared/JobListCard';
+import { STATUS_BADGE, APPLIED_BADGE } from '@/constants/jobs';
+import { getInitials } from '@/utils/format';
 import { HandymanTabParamList, HandymanStackParamList } from '@/types/navigation';
-import { Job, JobStatus } from '@/types/database';
+import { Job } from '@/types/database';
 
 type MyJobsNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<HandymanTabParamList, 'MyJobs'>,
@@ -19,147 +23,6 @@ type MyJobsNavigationProp = CompositeNavigationProp<
 interface MyJobsScreenProps { navigation: MyJobsNavigationProp; }
 
 type Tab = 'applied' | 'active' | 'past';
-
-const CATEGORY_ICONS: Record<string, { icon: keyof typeof Ionicons.glyphMap; bg: string }> = {
-  Plumbing:    { icon: 'water-outline',       bg: '#ffdcc5' },
-  Electrical:  { icon: 'flash-outline',        bg: '#9ff5c1' },
-  HVAC:        { icon: 'thermometer-outline',  bg: '#9ff5c1' },
-  Painting:    { icon: 'brush-outline',        bg: '#e9e7eb' },
-  Locksmith:   { icon: 'key-outline',          bg: '#d6e3ff' },
-  Tiling:      { icon: 'grid-outline',         bg: '#ffdcc5' },
-  Carpentry:   { icon: 'hammer-outline',       bg: '#e9e7eb' },
-  General:     { icon: 'construct-outline',    bg: '#e9e7eb' },
-};
-
-const STATUS_BADGE: Record<JobStatus, { label: string; bg: string; fg: string }> = {
-  open:        { label: 'Open',        bg: '#e9e7eb', fg: '#43474e' },
-  accepted:    { label: 'Scheduled',   bg: '#b6d0ff', fg: '#2d476f' },
-  in_progress: { label: 'In Progress', bg: '#9ff5c1', fg: '#005231' },
-  completed:   { label: 'Completed',   bg: '#e9e7eb', fg: '#43474e' },
-  cancelled:   { label: 'Cancelled',   bg: '#ffdad6', fg: '#93000a' },
-};
-
-const APPLIED_BADGE = { label: 'Awaiting Reply', bg: '#ffdcc5', fg: '#703700' };
-
-const getInitials = (name: string): string =>
-  name.split(' ').map(n => n[0] ?? '').join('').toUpperCase().slice(0, 2) || '?';
-
-const formatDate = (iso: string | null): string => {
-  if (!iso) return 'Flexible';
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
-  });
-};
-
-// ─── Job card ─────────────────────────────────────────────────────────────────
-interface JobCardProps {
-  job: Job;
-  onManage: () => void;
-  onChat?: () => void;
-  showChat: boolean;
-  applied?: boolean;
-}
-
-const JobCard = ({ job, onManage, onChat, showChat, applied }: JobCardProps) => {
-  const cat = CATEGORY_ICONS[job.category] ?? CATEGORY_ICONS.General;
-  const badge = applied ? APPLIED_BADGE : STATUS_BADGE[job.status];
-  const clientName = job.client?.full_name ?? 'Client';
-  const clientInitials = getInitials(clientName);
-
-  return (
-    <View
-      className="bg-surface-container-lowest rounded-xl p-5 mb-4"
-      style={{
-        shadowColor: '#1a1c1e',
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 2,
-      }}
-    >
-      {/* Header row */}
-      <View className="flex-row justify-between items-start mb-4">
-        <View className="flex-row items-start gap-x-3 flex-1 pr-2">
-          <View
-            className="w-12 h-12 rounded-lg items-center justify-center"
-            style={{ backgroundColor: cat.bg }}
-          >
-            <Ionicons name={cat.icon} size={22} color="#703700" />
-          </View>
-          <View className="flex-1">
-            <Text className="text-base font-extrabold text-on-surface leading-tight" numberOfLines={2}>
-              {job.title}
-            </Text>
-            <View className="flex-row items-center gap-x-1 mt-1">
-              <Ionicons name="calendar-outline" size={12} color="#43474e" />
-              <Text className="text-xs text-on-surface-variant font-medium">
-                {formatDate(job.scheduled_start)}
-              </Text>
-            </View>
-          </View>
-        </View>
-        <View
-          className="px-3 py-1 rounded-full"
-          style={{ backgroundColor: badge.bg }}
-        >
-          <Text
-            className="text-xs font-extrabold uppercase tracking-wider"
-            style={{ color: badge.fg }}
-          >
-            {badge.label}
-          </Text>
-        </View>
-      </View>
-
-      {/* Footer row */}
-      <View className="flex-row items-center justify-between pt-4 border-t border-surface-container">
-        <View className="flex-row items-center gap-x-3 flex-1">
-          <View className="w-9 h-9 rounded-full bg-secondary items-center justify-center">
-            <Text className="text-white font-extrabold text-xs">{clientInitials}</Text>
-          </View>
-          <View className="flex-1">
-            <Text className="text-xs font-medium text-on-surface-variant leading-none mb-0.5">
-              Client
-            </Text>
-            <Text className="text-sm font-extrabold text-on-surface" numberOfLines={1}>
-              {clientName}
-            </Text>
-          </View>
-        </View>
-
-        <View className="flex-row gap-x-2">
-          {showChat && (
-            <Pressable
-              className="w-10 h-10 rounded-full bg-surface-container-high items-center justify-center"
-              style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-              onPress={onChat}
-            >
-              <Ionicons name="chatbubble-outline" size={16} color="#371800" />
-            </Pressable>
-          )}
-          <Pressable
-            onPress={onManage}
-            style={({ pressed }) => ({
-              opacity: pressed ? 0.85 : 1,
-              transform: [{ scale: pressed ? 0.97 : 1 }],
-              shadowColor: '#371800',
-              shadowOpacity: 0.15,
-              shadowRadius: 6,
-              elevation: 2,
-            })}
-          >
-            <View
-              className="px-5 py-2.5 rounded-full"
-              style={{ backgroundColor: '#371800' }}
-            >
-              <Text className="text-white text-sm font-extrabold">Manage</Text>
-            </View>
-          </Pressable>
-        </View>
-      </View>
-    </View>
-  );
-};
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
 interface EmptyStateProps { tab: Tab; onBrowse: () => void; }
@@ -243,6 +106,8 @@ const Segmented = ({ tab, onChange }: SegmentedProps) => (
 const MyJobsScreen = ({ navigation }: MyJobsScreenProps) => {
   const { appliedJobs, activeJobs, pastJobs, isLoading, error, refetch } = useHandymanJobs();
   const [tab, setTab] = useState<Tab>('active');
+  const chattableIds = [...appliedJobs, ...activeJobs].map((j) => j.id);
+  const unreadByJob = useUnreadByJob(chattableIds);
 
   useFocusEffect(useCallback(() => { refetch(); }, [refetch]));
 
@@ -314,16 +179,33 @@ const MyJobsScreen = ({ navigation }: MyJobsScreenProps) => {
           {jobs.length === 0 ? (
             <EmptyState tab={tab} onBrowse={handleBrowse} />
           ) : (
-            jobs.map((job) => (
-              <JobCard
-                key={job.id}
-                job={job}
-                applied={tab === 'applied'}
-                showChat={tab === 'active' || tab === 'applied'}
-                onManage={() => handleManage(job)}
-                onChat={() => handleChat(job)}
-              />
-            ))
+            jobs.map((job) => {
+              const applied = tab === 'applied';
+              const showChat = tab === 'active' || tab === 'applied';
+              const clientName = job.client?.full_name ?? 'Client';
+              return (
+                <JobListCard
+                  key={job.id}
+                  job={job}
+                  badge={applied ? APPLIED_BADGE : STATUS_BADGE[job.status]}
+                  counterparty={{ name: clientName, label: 'Client' }}
+                  primaryAction={{
+                    label: 'Manage',
+                    onPress: () => handleManage(job),
+                  }}
+                  secondaryAction={
+                    showChat
+                      ? {
+                          icon: 'chatbubble-outline',
+                          onPress: () => handleChat(job),
+                          accessibilityLabel: 'Open chat',
+                          badgeCount: unreadByJob[job.id] ?? 0,
+                        }
+                      : undefined
+                  }
+                />
+              );
+            })
           )}
         </ScrollView>
       )}

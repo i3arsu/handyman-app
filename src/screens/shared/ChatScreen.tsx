@@ -17,6 +17,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useJobMessages } from '@/hooks/useJobMessages';
 import { useJob } from '@/hooks/useJob';
 import { useAuth } from '@/store/AuthContext';
+import { markChatRead } from '@/services/chatReads';
 import { ClientStackParamList, HandymanStackParamList } from '@/types/navigation';
 import { Message, JobStatus } from '@/types/database';
 
@@ -191,6 +192,11 @@ const ChatScreen = () => {
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
     }
   }, [messages.length]);
+
+  // Mark chat read on mount and every time a new message arrives while open.
+  useEffect(() => {
+    markChatRead(jobId);
+  }, [jobId, messages.length]);
 
   const handleSend = async () => {
     if (!draft.trim() || !user) return;
