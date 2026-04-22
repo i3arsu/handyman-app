@@ -382,28 +382,30 @@ const ReviewPostScreen = ({ navigation, route }: ReviewPostScreenProps) => {
           elevation: 8,
         }}
       >
-        <Pressable
-          className="w-full h-16 rounded-full flex-row items-center justify-center gap-x-3"
-          style={({ pressed }) => ({
-            backgroundColor: '#371800',
-            opacity: pressed || isPosting ? 0.85 : 1,
-            transform: [{ scale: pressed && !isPosting ? 0.98 : 1 }],
-            shadowColor: '#371800',
-            shadowOpacity: 0.3,
-            shadowRadius: 16,
-            shadowOffset: { width: 0, height: 6 },
-            elevation: 6,
-          })}
-          onPress={handlePost}
-          disabled={isPosting}
-        >
-          {isPosting ? (
-            <ActivityIndicator color="#ffffff" />
-          ) : (
-            <>
-              <Text className="font-extrabold text-lg text-white">Post Job</Text>
-              <Ionicons name="send-outline" size={20} color="#ffffff" />
-            </>
+        <Pressable onPress={handlePost} disabled={isPosting}>
+          {({ pressed }) => (
+            <View
+              className="w-full h-16 rounded-full flex-row items-center justify-center gap-x-3"
+              style={{
+                backgroundColor: '#371800',
+                opacity: pressed || isPosting ? 0.85 : 1,
+                transform: [{ scale: pressed && !isPosting ? 0.98 : 1 }],
+                shadowColor: '#371800',
+                shadowOpacity: 0.3,
+                shadowRadius: 16,
+                shadowOffset: { width: 0, height: 6 },
+                elevation: 6,
+              }}
+            >
+              {isPosting ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <>
+                  <Text className="font-extrabold text-lg text-white">Post Job</Text>
+                  <Ionicons name="send-outline" size={20} color="#ffffff" />
+                </>
+              )}
+            </View>
           )}
         </Pressable>
       </View>

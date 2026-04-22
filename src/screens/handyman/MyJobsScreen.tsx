@@ -77,25 +77,27 @@ const Segmented = ({ tab, onChange }: SegmentedProps) => (
     {(['applied', 'active', 'past'] as const).map((t) => {
       const isActive = tab === t;
       return (
-        <Pressable
-          key={t}
-          className="flex-1 py-3 rounded-full items-center"
-          style={({ pressed }) => ({
-            backgroundColor: isActive ? '#ffffff' : 'transparent',
-            opacity: pressed ? 0.8 : 1,
-            shadowColor: isActive ? '#1a1c1e' : 'transparent',
-            shadowOpacity: isActive ? 0.06 : 0,
-            shadowRadius: 4,
-            elevation: isActive ? 1 : 0,
-          })}
-          onPress={() => onChange(t)}
-        >
-          <Text
-            className="text-sm font-extrabold capitalize"
-            style={{ color: isActive ? '#371800' : '#43474e' }}
-          >
-            {t}
-          </Text>
+        <Pressable key={t} className="flex-1" onPress={() => onChange(t)}>
+          {({ pressed }) => (
+            <View
+              className="py-3 rounded-full items-center"
+              style={{
+                backgroundColor: isActive ? '#ffffff' : 'transparent',
+                opacity: pressed ? 0.8 : 1,
+                shadowColor: isActive ? '#1a1c1e' : 'transparent',
+                shadowOpacity: isActive ? 0.06 : 0,
+                shadowRadius: 4,
+                elevation: isActive ? 1 : 0,
+              }}
+            >
+              <Text
+                className="text-sm font-extrabold capitalize"
+                style={{ color: isActive ? '#371800' : '#43474e' }}
+              >
+                {t}
+              </Text>
+            </View>
+          )}
         </Pressable>
       );
     })}

@@ -197,25 +197,31 @@ const HandymanProfileScreen = ({ navigation }: HandymanProfileScreenProps) => {
               return (
                 <Pressable
                   key={option}
-                  className="flex-1 py-3 rounded-xl items-center"
-                  style={({ pressed }) => ({
-                    backgroundColor: isActive ? '#371800' : '#f4f3f7',
-                    opacity: pressed ? 0.8 : 1,
-                  })}
+                  className="flex-1"
                   onPress={() => setRadiusKm(option as RadiusOption)}
                 >
-                  <Text
-                    className="text-sm font-bold"
-                    style={{ color: isActive ? '#ffffff' : '#43474e' }}
-                  >
-                    {option}
-                  </Text>
-                  <Text
-                    className="text-xs mt-0.5"
-                    style={{ color: isActive ? 'rgba(255,255,255,0.7)' : '#74777f' }}
-                  >
-                    km
-                  </Text>
+                  {({ pressed }) => (
+                    <View
+                      className="py-3 rounded-xl items-center"
+                      style={{
+                        backgroundColor: isActive ? '#371800' : '#f4f3f7',
+                        opacity: pressed ? 0.8 : 1,
+                      }}
+                    >
+                      <Text
+                        className="text-sm font-bold"
+                        style={{ color: isActive ? '#ffffff' : '#43474e' }}
+                      >
+                        {option}
+                      </Text>
+                      <Text
+                        className="text-xs mt-0.5"
+                        style={{ color: isActive ? 'rgba(255,255,255,0.7)' : '#74777f' }}
+                      >
+                        km
+                      </Text>
+                    </View>
+                  )}
                 </Pressable>
               );
             })}

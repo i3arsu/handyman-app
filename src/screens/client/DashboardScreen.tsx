@@ -110,24 +110,30 @@ const DashboardScreen = ({ navigation }: DashboardScreenProps) => {
         {(['active', 'past'] as Tab[]).map((tab) => (
           <Pressable
             key={tab}
-            className="flex-1 py-3 px-6 rounded-full items-center"
-            style={({ pressed }) => ({
-              backgroundColor: activeTab === tab ? '#ffffff' : 'transparent',
-              opacity: pressed ? 0.8 : 1,
-              shadowColor: '#1a1c1e',
-              shadowOpacity: activeTab === tab ? 0.06 : 0,
-              shadowRadius: 4,
-              shadowOffset: { width: 0, height: 1 },
-              elevation: activeTab === tab ? 2 : 0,
-            })}
+            className="flex-1"
             onPress={() => setActiveTab(tab)}
           >
-            <Text
-              className="text-sm font-bold capitalize"
-              style={{ color: activeTab === tab ? '#371800' : '#43474e' }}
-            >
-              {tab}
-            </Text>
+            {({ pressed }) => (
+              <View
+                className="py-3 px-6 rounded-full items-center"
+                style={{
+                  backgroundColor: activeTab === tab ? '#ffffff' : 'transparent',
+                  opacity: pressed ? 0.8 : 1,
+                  shadowColor: '#1a1c1e',
+                  shadowOpacity: activeTab === tab ? 0.06 : 0,
+                  shadowRadius: 4,
+                  shadowOffset: { width: 0, height: 1 },
+                  elevation: activeTab === tab ? 2 : 0,
+                }}
+              >
+                <Text
+                  className="text-sm font-bold capitalize"
+                  style={{ color: activeTab === tab ? '#371800' : '#43474e' }}
+                >
+                  {tab}
+                </Text>
+              </View>
+            )}
           </Pressable>
         ))}
       </View>

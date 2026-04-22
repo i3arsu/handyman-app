@@ -104,20 +104,23 @@ const JobCard = ({ job, onPress, onAccept }: JobCardProps) => {
         >
           <Text className="text-on-surface font-bold text-sm">View Details</Text>
         </Pressable>
-        <Pressable
-          className="flex-1 py-3 rounded-full items-center justify-center"
-          style={({ pressed }) => ({
-            backgroundColor: '#371800',
-            opacity: pressed ? 0.85 : 1,
-            shadowColor: '#371800',
-            shadowOpacity: 0.12,
-            shadowRadius: 8,
-            shadowOffset: { width: 0, height: 3 },
-            elevation: 3,
-          })}
-          onPress={onAccept}
-        >
-          <Text className="text-on-primary font-extrabold text-sm">Apply</Text>
+        <Pressable className="flex-1" onPress={onAccept}>
+          {({ pressed }) => (
+            <View
+              className="py-3 rounded-full items-center justify-center"
+              style={{
+                backgroundColor: '#371800',
+                opacity: pressed ? 0.85 : 1,
+                shadowColor: '#371800',
+                shadowOpacity: 0.12,
+                shadowRadius: 8,
+                shadowOffset: { width: 0, height: 3 },
+                elevation: 3,
+              }}
+            >
+              <Text className="text-on-primary font-extrabold text-sm">Apply</Text>
+            </View>
+          )}
         </Pressable>
       </View>
     </Pressable>

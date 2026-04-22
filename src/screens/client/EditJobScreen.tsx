@@ -354,37 +354,39 @@ const EditJobScreen = () => {
           elevation: 8,
         }}
       >
-        <Pressable
-          className="w-full h-16 rounded-full flex-row items-center justify-center gap-x-3"
-          style={({ pressed }) => ({
-            backgroundColor: canSave ? '#371800' : '#c4c6cf',
-            opacity: pressed && canSave ? 0.9 : 1,
-            transform: [{ scale: pressed && canSave ? 0.98 : 1 }],
-            shadowColor: '#371800',
-            shadowOpacity: canSave ? 0.25 : 0,
-            shadowRadius: 16,
-            shadowOffset: { width: 0, height: 6 },
-            elevation: canSave ? 6 : 0,
-          })}
-          onPress={handleSave}
-          disabled={!canSave}
-        >
-          {isSaving ? (
-            <ActivityIndicator size="small" color="#ffffff" />
-          ) : (
-            <>
-              <Text
-                className="font-extrabold text-lg"
-                style={{ color: canSave ? '#ffffff' : '#74777f' }}
-              >
-                Save Changes
-              </Text>
-              <Ionicons
-                name="checkmark"
-                size={20}
-                color={canSave ? '#ffffff' : '#74777f'}
-              />
-            </>
+        <Pressable onPress={handleSave} disabled={!canSave}>
+          {({ pressed }) => (
+            <View
+              className="w-full h-16 rounded-full flex-row items-center justify-center gap-x-3"
+              style={{
+                backgroundColor: canSave ? '#371800' : '#c4c6cf',
+                opacity: pressed && canSave ? 0.9 : 1,
+                transform: [{ scale: pressed && canSave ? 0.98 : 1 }],
+                shadowColor: '#371800',
+                shadowOpacity: canSave ? 0.25 : 0,
+                shadowRadius: 16,
+                shadowOffset: { width: 0, height: 6 },
+                elevation: canSave ? 6 : 0,
+              }}
+            >
+              {isSaving ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <>
+                  <Text
+                    className="font-extrabold text-lg"
+                    style={{ color: canSave ? '#ffffff' : '#74777f' }}
+                  >
+                    Save Changes
+                  </Text>
+                  <Ionicons
+                    name="checkmark"
+                    size={20}
+                    color={canSave ? '#ffffff' : '#74777f'}
+                  />
+                </>
+              )}
+            </View>
           )}
         </Pressable>
       </View>

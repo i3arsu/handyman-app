@@ -420,32 +420,34 @@ const JobDetailsScreen = ({ navigation, route }: JobDetailsScreenProps) => {
           elevation: 8,
         }}
       >
-        <Pressable
-          className="w-full h-16 rounded-full flex-row items-center justify-center gap-x-3"
-          style={({ pressed }) => ({
-            backgroundColor: canContinue ? '#371800' : '#c4c6cf',
-            opacity: pressed && canContinue ? 0.9 : 1,
-            transform: [{ scale: pressed && canContinue ? 0.98 : 1 }],
-            shadowColor: '#371800',
-            shadowOpacity: canContinue ? 0.25 : 0,
-            shadowRadius: 16,
-            shadowOffset: { width: 0, height: 6 },
-            elevation: canContinue ? 6 : 0,
-          })}
-          onPress={handleContinue}
-          disabled={!canContinue}
-        >
-          <Text
-            className="font-extrabold text-lg"
-            style={{ color: canContinue ? '#ffffff' : '#74777f' }}
-          >
-            Continue
-          </Text>
-          <Ionicons
-            name="arrow-forward"
-            size={20}
-            color={canContinue ? '#ffffff' : '#74777f'}
-          />
+        <Pressable onPress={handleContinue} disabled={!canContinue}>
+          {({ pressed }) => (
+            <View
+              className="w-full h-16 rounded-full flex-row items-center justify-center gap-x-3"
+              style={{
+                backgroundColor: canContinue ? '#371800' : '#c4c6cf',
+                opacity: pressed && canContinue ? 0.9 : 1,
+                transform: [{ scale: pressed && canContinue ? 0.98 : 1 }],
+                shadowColor: '#371800',
+                shadowOpacity: canContinue ? 0.25 : 0,
+                shadowRadius: 16,
+                shadowOffset: { width: 0, height: 6 },
+                elevation: canContinue ? 6 : 0,
+              }}
+            >
+              <Text
+                className="font-extrabold text-lg"
+                style={{ color: canContinue ? '#ffffff' : '#74777f' }}
+              >
+                Continue
+              </Text>
+              <Ionicons
+                name="arrow-forward"
+                size={20}
+                color={canContinue ? '#ffffff' : '#74777f'}
+              />
+            </View>
+          )}
         </Pressable>
         <Text className="text-center text-on-surface-variant text-xs mt-3 font-medium">
           Estimated quote arrival: <Text className="text-primary font-bold">Within 30 mins</Text>

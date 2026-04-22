@@ -285,30 +285,32 @@ const PricingRoutingScreen = ({ navigation, route }: PricingRoutingScreenProps) 
             elevation: 8,
           }}
         >
-          <Pressable
-            className="w-full h-16 rounded-full flex-row items-center justify-center gap-x-3"
-            style={({ pressed }) => ({
-              backgroundColor: '#371800',
-              opacity: pressed || isApplying ? 0.85 : 1,
-              transform: [{ scale: pressed && !isApplying ? 0.98 : 1 }],
-              shadowColor: '#371800',
-              shadowOpacity: 0.3,
-              shadowRadius: 16,
-              shadowOffset: { width: 0, height: 6 },
-              elevation: 6,
-            })}
-            onPress={handleApply}
-            disabled={isApplying}
-          >
-            {isApplying ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <>
-                <Ionicons name="paper-plane-outline" size={20} color="#ffffff" />
-                <Text className="font-extrabold text-lg text-white">
-                  Submit Application
-                </Text>
-              </>
+          <Pressable onPress={handleApply} disabled={isApplying}>
+            {({ pressed }) => (
+              <View
+                className="w-full h-16 rounded-full flex-row items-center justify-center gap-x-3"
+                style={{
+                  backgroundColor: '#371800',
+                  opacity: pressed || isApplying ? 0.85 : 1,
+                  transform: [{ scale: pressed && !isApplying ? 0.98 : 1 }],
+                  shadowColor: '#371800',
+                  shadowOpacity: 0.3,
+                  shadowRadius: 16,
+                  shadowOffset: { width: 0, height: 6 },
+                  elevation: 6,
+                }}
+              >
+                {isApplying ? (
+                  <ActivityIndicator color="#ffffff" />
+                ) : (
+                  <>
+                    <Ionicons name="paper-plane-outline" size={20} color="#ffffff" />
+                    <Text className="font-extrabold text-lg text-white">
+                      Submit Application
+                    </Text>
+                  </>
+                )}
+              </View>
             )}
           </Pressable>
         </View>

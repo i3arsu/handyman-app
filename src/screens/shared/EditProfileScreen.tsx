@@ -170,33 +170,35 @@ const EditProfileScreen = () => {
           className="px-6 pt-4 pb-6 bg-surface"
           style={{ shadowColor: '#1a1c1e', shadowOpacity: 0.08, shadowRadius: 16, shadowOffset: { width: 0, height: -4 }, elevation: 8 }}
         >
-          <Pressable
-            onPress={handleSave}
-            disabled={isSaving || isLoading}
-            style={({ pressed }) => ({
-              backgroundColor: '#371800',
-              opacity: pressed || isSaving || isLoading ? 0.85 : 1,
-              transform: [{ scale: pressed && !isSaving ? 0.98 : 1 }],
-              height: 56,
-              borderRadius: 9999,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 10,
-              shadowColor: '#371800',
-              shadowOpacity: 0.3,
-              shadowRadius: 16,
-              shadowOffset: { width: 0, height: 6 },
-              elevation: 6,
-            })}
-          >
-            {isSaving ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <>
-                <Ionicons name="checkmark" size={20} color="#ffffff" />
-                <Text className="text-white font-extrabold text-lg">Save Changes</Text>
-              </>
+          <Pressable onPress={handleSave} disabled={isSaving || isLoading}>
+            {({ pressed }) => (
+              <View
+                style={{
+                  backgroundColor: '#371800',
+                  opacity: pressed || isSaving || isLoading ? 0.85 : 1,
+                  transform: [{ scale: pressed && !isSaving ? 0.98 : 1 }],
+                  height: 56,
+                  borderRadius: 9999,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 10,
+                  shadowColor: '#371800',
+                  shadowOpacity: 0.3,
+                  shadowRadius: 16,
+                  shadowOffset: { width: 0, height: 6 },
+                  elevation: 6,
+                }}
+              >
+                {isSaving ? (
+                  <ActivityIndicator color="#ffffff" />
+                ) : (
+                  <>
+                    <Ionicons name="checkmark" size={20} color="#ffffff" />
+                    <Text className="text-white font-extrabold text-lg">Save Changes</Text>
+                  </>
+                )}
+              </View>
             )}
           </Pressable>
         </View>
