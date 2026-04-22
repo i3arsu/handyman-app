@@ -106,57 +106,6 @@ const SecurityCard = ({ icon, title, body, onPress }: SecurityCardProps) => (
   </Pressable>
 );
 
-// ─── Payment card ─────────────────────────────────────────────────────────────
-interface PaymentCardProps { cardHolder: string; }
-const PaymentCard = ({ cardHolder }: PaymentCardProps) => (
-  <View
-    className="rounded-xl overflow-hidden p-6"
-    style={{
-      backgroundColor: '#1a1c1e',
-      shadowColor: '#000',
-      shadowOpacity: 0.2,
-      shadowRadius: 16,
-      shadowOffset: { width: 0, height: 8 },
-      elevation: 6,
-    }}
-  >
-    <View
-      className="absolute rounded-full"
-      style={{
-        width: 220,
-        height: 220,
-        top: -70,
-        right: -70,
-        backgroundColor: '#572900',
-        opacity: 0.35,
-      }}
-    />
-    <View className="flex-row items-start justify-between mb-10">
-      <View className="w-9 h-9 rounded-full bg-white/10 items-center justify-center">
-        <Ionicons name="wifi" size={18} color="#ffffff" style={{ transform: [{ rotate: '90deg' }] }} />
-      </View>
-      <Text className="text-white text-lg font-extrabold italic tracking-widest">VISA</Text>
-    </View>
-    <Text className="text-white text-xl font-bold tracking-[6px] mb-6">••••  ••••  ••••  4242</Text>
-    <View className="flex-row items-end justify-between">
-      <View>
-        <Text className="text-white/60 text-[10px] font-bold uppercase tracking-widest mb-1">
-          Card Holder
-        </Text>
-        <Text className="text-white font-extrabold tracking-wider">
-          {cardHolder.toUpperCase()}
-        </Text>
-      </View>
-      <View>
-        <Text className="text-white/60 text-[10px] font-bold uppercase tracking-widest mb-1">
-          Expires
-        </Text>
-        <Text className="text-white font-extrabold tracking-wider">12/26</Text>
-      </View>
-    </View>
-  </View>
-);
-
 // ─── Screen ───────────────────────────────────────────────────────────────────
 const SettingsScreen = ({ navigation }: SettingsScreenProps) => {
   const { user } = useAuth();
@@ -244,18 +193,6 @@ const SettingsScreen = ({ navigation }: SettingsScreenProps) => {
             body="Control what information is shared with service partners."
           />
         </View>
-
-        {/* Payment Methods */}
-        <SectionHeader
-          icon="card-outline"
-          title="Payment Methods"
-          trailing={
-            <Pressable style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
-              <Text className="text-primary font-extrabold text-sm">Add New</Text>
-            </Pressable>
-          }
-        />
-        <PaymentCard cardHolder={displayName} />
 
         {/* Logout */}
         <Pressable
