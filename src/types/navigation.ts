@@ -19,6 +19,7 @@ export type AuthStackParamList = {
 export type ClientStackParamList = {
   Tabs: undefined;
   JobProgress: { jobId: string };
+  EditJob: { jobId: string };
   Chat: { jobId: string; counterpartyName: string; counterpartyInitials: string };
   Notifications: undefined;
   EditProfile: undefined;

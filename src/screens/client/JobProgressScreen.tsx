@@ -642,7 +642,7 @@ const JobProgressScreen = ({ navigation, route }: JobProgressScreenProps) => {
             )}
 
             <Pressable
-              className="flex-1 py-4 rounded-full bg-primary items-center justify-center"
+              className="flex-1"
               style={({ pressed }) => ({
                 opacity: pressed ? 0.85 : 1,
                 shadowColor: '#371800',
@@ -650,8 +650,20 @@ const JobProgressScreen = ({ navigation, route }: JobProgressScreenProps) => {
                 shadowRadius: 8,
                 elevation: 3,
               })}
+              onPress={
+                job.status === 'open'
+                  ? () => navigation.navigate('EditJob', { jobId: job.id })
+                  : undefined
+              }
             >
-              <Text className="font-extrabold text-white">Help Center</Text>
+              <View
+                className="py-4 rounded-full items-center justify-center"
+                style={{ backgroundColor: '#371800' }}
+              >
+                <Text className="font-extrabold text-white">
+                  {job.status === 'open' ? 'Edit Job' : 'Help Center'}
+                </Text>
+              </View>
             </Pressable>
           </View>
         </View>
