@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 import { supabase } from '@/services/supabase';
+import { fetchProfilesByIds } from '@/services/profiles';
 import { Message, Profile } from '@/types/database';
 
 interface UseJobMessagesResult {
@@ -20,28 +21,14 @@ export const useJobMessages = (jobId: string): UseJobMessagesResult => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Cache resolved sender profiles across realtime events.
-  const sendersRef = useRef<Record<string, SenderLite>>({});
-
   // Unique channel suffix per hook instance to avoid shared-channel collisions.
   const channelIdRef = useRef<string>(Math.random().toString(36).slice(2));
 
-  const resolveSenders = useCallback(async (senderIds: string[]): Promise<Record<string, SenderLite>> => {
-    const missing = senderIds.filter(id => !sendersRef.current[id]);
-    if (missing.length === 0) return sendersRef.current;
-
-    const { data, error: sErr } = await supabase
-      .from('profiles')
-      .select('id, full_name, role')
-      .in('id', missing);
-
-    if (!sErr && data) {
-      for (const p of data as SenderLite[]) {
-        sendersRef.current[p.id] = p;
-      }
-    }
-    return sendersRef.current;
-  }, []);
+  const resolveSenders = useCallback(
+    (senderIds: string[]): Promise<Record<string, SenderLite>> =>
+      fetchProfilesByIds<SenderLite>(senderIds, 'id, full_name, role'),
+    [],
+  );
 
   useEffect(() => {
     let cancelled = false;

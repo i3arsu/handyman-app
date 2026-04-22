@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { supabase } from '@/services/supabase';
+import { fetchProfilesByIds } from '@/services/profiles';
 import { useAuth } from '@/store/AuthContext';
+import { getErrorMessage } from '@/utils/errors';
 import { Job, JobStatus, Profile } from '@/types/database';
 
 interface UseHandymanJobsResult {
@@ -99,29 +101,20 @@ export const useHandymanJobs = (): UseHandymanJobsResult => {
         const allJobs = [...assignedJobs, ...pendingJobs];
         const clientIds = Array.from(new Set(allJobs.map(j => j.client_id)));
 
-        let clientsById: Record<string, Profile> = {};
-        if (clientIds.length > 0) {
-          const { data: profilesData, error: profilesError } = await supabase
-            .from('profiles')
-            .select('id, email, full_name, avatar_url, role, created_at')
-            .in('id', clientIds);
-
-          if (cancelled) return;
-          if (profilesError) {
-            setError(profilesError.message);
-            return;
-          }
-          clientsById = ((profilesData ?? []) as Profile[]).reduce<Record<string, Profile>>(
-            (acc, p) => { acc[p.id] = p; return acc; },
-            {},
-          );
-        }
+        const clientsById: Record<string, Profile> =
+          clientIds.length > 0 ? await fetchProfilesByIds<Profile>(clientIds) : {};
+        if (cancelled) return;
 
         const enrich = (j: Job): Job => ({ ...j, client: clientsById[j.client_id] });
 
-        setAppliedJobs(pendingJobs.map(enrich));
+        // Hide pending applications on jobs that the client has since cancelled —
+        // the handyman gets a 'job_cancelled' notification, no need to keep a
+        // dead row in the Applied tab.
+        setAppliedJobs(pendingJobs.filter(j => j.status === 'open').map(enrich));
         setActiveJobs(assignedJobs.filter(j => ACTIVE_STATUSES.includes(j.status)).map(enrich));
         setPastJobs(assignedJobs.filter(j => PAST_STATUSES.includes(j.status)).map(enrich));
+      } catch (err) {
+        if (!cancelled) setError(getErrorMessage(err));
       } finally {
         if (!cancelled) setIsLoading(false);
       }

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/services/supabase';
+import { clearProfilesCache } from '@/services/profiles';
 import { UserRole } from '@/types/auth';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -28,7 +29,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Keep session in sync with Supabase auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, updatedSession) => {
+      (event, updatedSession) => {
+        if (event === 'SIGNED_OUT') clearProfilesCache();
         setSession(updatedSession);
         setIsLoading(false);
       },

@@ -1,6 +1,8 @@
 import { useCallback, useState, useEffect, useRef } from 'react';
 
 import { supabase } from '@/services/supabase';
+import { fetchProfilesByIds } from '@/services/profiles';
+import { getErrorMessage } from '@/utils/errors';
 import { Job, Profile } from '@/types/database';
 
 interface UseJobResult {
@@ -55,18 +57,6 @@ export const useJob = (jobId: string): UseJobResult => {
 
         const baseJob = jobRow as Job;
 
-        const { data: clientRow, error: clientError } = await supabase
-          .from('profiles')
-          .select('id, email, full_name, avatar_url, role, created_at')
-          .eq('id', baseJob.client_id)
-          .maybeSingle();
-
-        if (cancelled) return;
-        if (clientError) {
-          setError(clientError.message);
-          return;
-        }
-
         const { data: appsRows, error: appsError } = await supabase
           .from('job_applications')
           .select('status, handyman_id')
@@ -88,42 +78,33 @@ export const useJob = (jobId: string): UseJobResult => {
           apps.push({ status: 'accepted', handyman_id: baseJob.handyman_id });
         }
 
-        const handymanIds = Array.from(new Set(apps.map(a => a.handyman_id)));
-
         type HandymanLite = Pick<Profile, 'id' | 'full_name' | 'email'>;
-        let handymenById: Record<string, HandymanLite> = {};
-        if (handymanIds.length > 0) {
-          const { data: handymenRows, error: handymenError } = await supabase
-            .from('profiles')
-            .select('id, full_name, email')
-            .in('id', handymanIds);
+        const handymanIds = apps.map(a => a.handyman_id);
+        const [clientsById, handymenById] = await Promise.all([
+          fetchProfilesByIds<Profile>([baseJob.client_id]),
+          handymanIds.length
+            ? fetchProfilesByIds<HandymanLite>(handymanIds, 'id, full_name, email')
+            : Promise.resolve({} as Record<string, HandymanLite>),
+        ]);
 
-          if (cancelled) return;
-          if (handymenError) {
-            setError(handymenError.message);
-            return;
-          }
-
-          handymenById = (handymenRows ?? []).reduce<Record<string, HandymanLite>>(
-            (acc, p) => { acc[p.id] = p as HandymanLite; return acc; },
-            {},
-          );
-        }
+        if (cancelled) return;
 
         setJob({
           ...baseJob,
-          client: (clientRow ?? undefined) as Profile | undefined,
+          client: clientsById[baseJob.client_id],
           job_applications: apps.map(a => {
             const h = handymenById[a.handyman_id];
             return {
               status: a.status,
               handyman: h
-                ? { id: h.id, full_name: h.full_name ?? h.email.split('@')[0] ?? 'Pro' }
+                ? { id: h.id ?? a.handyman_id, full_name: h.full_name ?? h.email?.split('@')[0] ?? 'Pro' }
                 : null,
             };
           }),
         });
         setError(null);
+      } catch (err) {
+        if (!cancelled) setError(getErrorMessage(err));
       } finally {
         if (!cancelled) setIsLoading(false);
       }

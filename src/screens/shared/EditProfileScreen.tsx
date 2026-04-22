@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
 import { supabase } from '@/services/supabase';
+import { invalidateProfile } from '@/services/profiles';
 import { useAuth } from '@/store/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 
@@ -89,6 +90,7 @@ const EditProfileScreen = () => {
         return;
       }
 
+      invalidateProfile(user.id);
       refetch();
       navigation.goBack();
     } finally {
