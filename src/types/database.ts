@@ -59,8 +59,10 @@ export type NotificationType =
   | 'application_received'
   | 'application_accepted'
   | 'application_rejected'
+  | 'application_withdrawn'
   | 'job_started'
   | 'job_completed'
+  | 'job_cancelled'
   | 'new_message'
   | 'new_nearby_job';
 

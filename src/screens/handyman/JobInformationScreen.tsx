@@ -266,6 +266,42 @@ const JobInformationScreen = ({ navigation, route }: JobInformationScreenProps) 
     });
   };
 
+  const handleWithdraw = () => {
+    if (!user) return;
+    Alert.alert(
+      'Withdraw application?',
+      'This removes your application from the job. You can re-apply later if it is still open.',
+      [
+        { text: 'Keep Application', style: 'cancel' },
+        {
+          text: 'Withdraw',
+          style: 'destructive',
+          onPress: async () => {
+            setIsUpdating(true);
+            try {
+              const { error: deleteError } = await supabase
+                .from('job_applications')
+                .delete()
+                .eq('job_id', jobId)
+                .eq('handyman_id', user.id)
+                .eq('status', 'pending');
+
+              if (deleteError) {
+                Alert.alert('Error', deleteError.message);
+                return;
+              }
+
+              refetch();
+              navigation.goBack();
+            } finally {
+              setIsUpdating(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const handleLifecycleTransition = (cfg: CtaConfig) => {
     if (!cfg.nextStatus) return;
 
@@ -506,23 +542,36 @@ const JobInformationScreen = ({ navigation, route }: JobInformationScreenProps) 
             )}
           </Pressable>
         ) : hasPendingApplication ? (
-          <View
-            style={{
-              width: '100%',
-              height: 56,
-              borderRadius: 9999,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 10,
-              backgroundColor: '#e3e2e6',
-            }}
-          >
-            <Ionicons name="hourglass-outline" size={20} color="#74777f" />
-            <Text style={{ color: '#74777f', fontWeight: '800', fontSize: 17 }}>
-              Application Pending
-            </Text>
-          </View>
+          <Pressable onPress={handleWithdraw} disabled={isUpdating}>
+            {({ pressed }) => (
+              <View
+                style={{
+                  width: '100%',
+                  height: 56,
+                  borderRadius: 9999,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 10,
+                  borderWidth: 1.5,
+                  borderColor: '#93000a',
+                  backgroundColor: pressed ? '#ffdad6' : 'transparent',
+                  opacity: isUpdating ? 0.7 : 1,
+                }}
+              >
+                {isUpdating ? (
+                  <ActivityIndicator color="#93000a" />
+                ) : (
+                  <>
+                    <Ionicons name="arrow-undo-outline" size={18} color="#93000a" />
+                    <Text style={{ color: '#93000a', fontWeight: '800', fontSize: 16 }}>
+                      Withdraw Application
+                    </Text>
+                  </>
+                )}
+              </View>
+            )}
+          </Pressable>
         ) : job && job.status !== 'open' ? (
           <View
             style={{

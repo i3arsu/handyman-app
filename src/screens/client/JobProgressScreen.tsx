@@ -399,21 +399,38 @@ const JobProgressScreen = ({ navigation, route }: JobProgressScreenProps) => {
   };
 
   const handleCancel = () => {
-    Alert.alert(
-      'Cancel Job',
-      'Are you sure you want to cancel this request?',
-      [
-        { text: 'Keep Job', style: 'cancel' },
-        {
-          text: 'Cancel Job',
-          style: 'destructive',
-          onPress: async () => {
-            await supabase.from('jobs').update({ status: 'cancelled' }).eq('id', jobId);
-            navigation.goBack();
-          },
+    if (!job) return;
+
+    const hasAssignedPro = !!job.handyman_id;
+    const applicantCount = (job.job_applications ?? []).filter(a => a.status === 'pending').length;
+
+    const body = hasAssignedPro
+      ? 'Your assigned pro will be notified. You cannot undo this.'
+      : applicantCount > 0
+      ? `${applicantCount} applicant${applicantCount === 1 ? '' : 's'} will be notified. You cannot undo this.`
+      : 'This job will be closed. You cannot undo this.';
+
+    Alert.alert('Cancel job?', body, [
+      { text: 'Keep Job', style: 'cancel' },
+      {
+        text: 'Cancel Job',
+        style: 'destructive',
+        onPress: async () => {
+          const { error: cancelError } = await supabase
+            .from('jobs')
+            .update({ status: 'cancelled' })
+            .eq('id', jobId);
+
+          if (cancelError) {
+            Alert.alert('Error', cancelError.message);
+            return;
+          }
+
+          refetch();
+          navigation.goBack();
         },
-      ],
-    );
+      },
+    ]);
   };
 
   if (isLoading) {

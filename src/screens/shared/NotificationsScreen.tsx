@@ -14,13 +14,15 @@ const TYPE_CONFIG: Record<
   NotificationType,
   { icon: keyof typeof Ionicons.glyphMap; bg: string; iconColor: string }
 > = {
-  application_received: { icon: 'person-add-outline',        bg: '#d6e3ff', iconColor: '#3f5882' },
-  application_accepted: { icon: 'checkmark-circle-outline',  bg: '#9ff5c1', iconColor: '#005231' },
-  application_rejected: { icon: 'close-circle-outline',      bg: '#ffdad6', iconColor: '#8c1d18' },
-  job_started:          { icon: 'play-circle-outline',       bg: '#ffdcc5', iconColor: '#703700' },
-  job_completed:        { icon: 'checkmark-done-outline',    bg: '#9ff5c1', iconColor: '#005231' },
-  new_message:          { icon: 'chatbubble-outline',        bg: '#ffdcc5', iconColor: '#703700' },
-  new_nearby_job:       { icon: 'hammer-outline',            bg: '#d6e3ff', iconColor: '#3f5882' },
+  application_received:  { icon: 'person-add-outline',       bg: '#d6e3ff', iconColor: '#3f5882' },
+  application_accepted:  { icon: 'checkmark-circle-outline', bg: '#9ff5c1', iconColor: '#005231' },
+  application_rejected:  { icon: 'close-circle-outline',     bg: '#ffdad6', iconColor: '#8c1d18' },
+  application_withdrawn: { icon: 'arrow-undo-outline',       bg: '#ffdad6', iconColor: '#8c1d18' },
+  job_started:           { icon: 'play-circle-outline',      bg: '#ffdcc5', iconColor: '#703700' },
+  job_completed:         { icon: 'checkmark-done-outline',   bg: '#9ff5c1', iconColor: '#005231' },
+  job_cancelled:         { icon: 'ban-outline',              bg: '#ffdad6', iconColor: '#8c1d18' },
+  new_message:           { icon: 'chatbubble-outline',       bg: '#ffdcc5', iconColor: '#703700' },
+  new_nearby_job:        { icon: 'hammer-outline',           bg: '#d6e3ff', iconColor: '#3f5882' },
 };
 
 // ─── Relative time ────────────────────────────────────────────────────────────

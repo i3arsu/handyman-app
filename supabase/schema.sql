@@ -156,6 +156,15 @@ create policy "Clients can update application status"
     auth.uid() = (select client_id from public.jobs where id = job_id)
   );
 
+-- Handymen can withdraw their own pending application (DELETE).
+create policy "Handymen can withdraw pending applications"
+  on public.job_applications for delete
+  to authenticated
+  using (
+    auth.uid() = handyman_id
+    and status = 'pending'
+  );
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 5. NOTIFICATIONS
 --    In-app inbox. Rows are written by Postgres triggers on the event sources
@@ -169,8 +178,10 @@ create table if not exists public.notifications (
     'application_received',
     'application_accepted',
     'application_rejected',
+    'application_withdrawn',
     'job_started',
     'job_completed',
+    'job_cancelled',
     'new_message',
     'new_nearby_job'
   )),
