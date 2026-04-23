@@ -50,7 +50,8 @@
         {
           "locationWhenInUsePermission": "Reliant Home uses your location to show nearby jobs on the map."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "extra": {
       "eas": {
